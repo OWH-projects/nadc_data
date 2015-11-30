@@ -1,0 +1,3 @@
+Candidate Last Name|Candidate First Name|Candidate ID|Date Received|Real Property|Other Property
+DISCOE|EDWARD|99FIS09860|2014-08-19||
+MUELLEMAN|DIANE|10FIS12011|2014-08-07|Union, NE Residential-rental|

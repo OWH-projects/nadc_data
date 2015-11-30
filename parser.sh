@@ -5,13 +5,13 @@ FUSER=$(sed -n '1p' ../config.txt)
 FPW=$(sed -n '2p' ../config.txt)
 
 #fetch the files, yo
-#printf "\n~~ fetching new data ~~\n"
-#mkdir -p ${P}nadc_data/toupload
-#wget http://www.nebraska.gov/nadc_data/nadc_data.zip
-#unzip -j -o nadc_data.zip
-#rm nadc_data.zip
-#chmod 777 *.txt *.TXT *.rtf
-#printf "~~ fetched 'at data ~~\n\n"
+printf "\n~~ fetching new data ~~\n"
+mkdir -p ${P}nadc_data/toupload
+wget http://www.nebraska.gov/nadc_data/nadc_data.zip
+unzip -j -o nadc_data.zip
+rm nadc_data.zip
+chmod 777 *.txt *.TXT *.rtf
+printf "~~ fetched 'at data ~~\n\n"
 
 #parse the "last updated" date
 printf "\n~~ parsing \"last updated\" date ~~\n"

@@ -1,16 +1,16 @@
 #NADC data
 
-<img src="https://media.giphy.com/media/10nMEclFWTPCp2/giphy.gif" style="width:100%;" />
+<img src="https://media.giphy.com/media/Kerg053G7ZJUQ/giphy.gif" style="width:100%;" />
 
 Scripts to process data from the Nebraska Accountability and Disclosure Commission into something <a href="https://github.com/OWH-projects/nadc">our campaign finance app</a> can import. Run `pip install -r requirements.txt` to install the dependencies:
 - [csvkit](https://csvkit.readthedocs.org/en/0.9.1/)  
 - [pandas!](http://pandas.pydata.org/pandas-docs/stable/)  
 - [fabric](http://www.fabfile.org/)
 
-The NADC now offers weekly updates of campaign finance data. Our script fetches new data, parses it and returns a set of clean files that our app can ingest. It takes less than 10 minutes to run. The update process:
+The NADC now offers <a href="http://www.nebraska.gov/data.html" target="_blank">weekly updates</a> of campaign finance data. Sunday nights, our script fetches new data, parses it and returns a set of clean files that our app can ingest. The update process:
 <ol>
 <li>Run <code>parser.sh</code></li>
-<li>If there are new, invalid dates that we haven't encountered in the past, you'll be prompted to add those to a dict in <code>canonical/canonical.py</code></li>
+<li>If there are new, invalid dates that we haven't encountered in the past, you'll be prompted to add those to <code>canonical/canonical.py</code></li>
 </ol>
 
 ##Overview

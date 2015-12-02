@@ -9,25 +9,25 @@ import datetime
 from canonical.canonical import *
 import time
 import re
+from twitter import *
+import requests
 
 fabric.state.output.status = False
 
-"""
-Helper functions.
-"""
-
-def getPath():
+#cache list of config vals
+def getConfig():
     with open("../config.txt", "rb") as w:
-         return w.readlines()[5]
+        c = w.readlines()
+        c = [linebr.replace("\n", "") for linebr in c]
+        return c
 
-THISPATH = getPath()
+configlist = getConfig()
+THISPATH = configlist[5]
 
 def validDate(datestring):
-    """
-    Check for known bad dates, invalid dates, dates in the future.
-    """
+    "Check for known bad dates, invalid dates, dates in the future."
     try:
-        return SHITDATES[datestring]
+        return GARBAGE_DATES[datestring]
     except:
         try:
             # is it a valid date?
@@ -40,19 +40,17 @@ def validDate(datestring):
         except:
             return "broke"
 
-            
-            
+
 def getFloat(i):
-    """
-    Return a float or 0.0.
-    """
+    "Return a float or 0.0."
     if not i or i == "":
         return "0.0"
     else:
         return i
 
-        
+
 def lookItUp(input, param, namefield):
+    "Function to check if a record exists in canonical donors lookup dict"
     try:
         return str(CANON[input][param])
     except:
@@ -61,29 +59,29 @@ def lookItUp(input, param, namefield):
         else:
             return namefield
 
-        
+
 def canonFlag(input):
+    "Temporary workaround to display front-page canonical records"
     try:
         x = CANON[input]
         return "I"
     except:
         return ""
 
-        
+
 def canonOffice(rawstring, param):
+    "Hit the office canonical dict to standardize office names"
     try:
         x = CANON_OFFICE[rawstring][param]
         return x
     except:
         return ""
         
-        
+
 def getDate():
-    """
-    Parse the "last updated" date from a file in the NADC data dump.
-    """
-    q = open(THISPATH + "/nadc_data/last_updated.py", "wb")
-    with open(THISPATH + "/nadc_data/DATE_UPDATED.TXT", "rb") as d:
+    "Parse the last updated date from a file in the NADC data dump."
+    q = open(THISPATH + "nadc_data/last_updated.py", "wb")
+    with open(THISPATH + "nadc_data/DATE_UPDATED.TXT", "rb") as d:
         last_updated = d.readline().split(": ")[1].split(" ")[0].split("-")
         year = last_updated[0]
         month = last_updated[1].lstrip("0")
@@ -130,7 +128,6 @@ def parseErrything():
         
     Assumptions:
         A "direct expenditure" or "cash disbursement" to a candidate or registered committee is equivalent to a donation and will be treated as such.
-        
     """
     
     delim = "|"
@@ -235,7 +232,7 @@ def parseErrything():
         
         for row in a1reader:
             a1_entity_id = row[0] #NADC ID
-            if a1_entity_id not in SHITCOMMITTEES:
+            if a1_entity_id not in GARBAGE_COMMITTEES:
                 #Append ID to master list
                 id_master_list.append(a1_entity_id)
                 
@@ -278,7 +275,7 @@ def parseErrything():
                 #is there a separate segregated political fund?
                 if row[15] and row[15].strip() != "":
                     a1_sspf_id = row[15] #NADC ID
-                    if a1_sspf_id not in SHITCOMMITTEES:
+                    if a1_sspf_id not in GARBAGE_COMMITTEES:
                         #Append ID to master list
                         id_master_list.append(a1_sspf_id)
                         
@@ -311,7 +308,7 @@ def parseErrything():
                 #is this a ballot question?
                 if row[6].upper().strip() == "B":
                     a1_nadc_id = row[0]
-                    if a1_nadc_id not in SHITCOMMITTEES:
+                    if a1_nadc_id not in GARBAGE_COMMITTEES:
                         a1_ballot = ' '.join((row[10].upper().strip()).split()).replace('"',"")
                         a1_ballot_type = row[12]
                         a1_ballot_stance = row[11]
@@ -359,7 +356,7 @@ def parseErrything():
             a1cand_id = row[2] #Candidate ID
             a1cand_committee_id = row[0] #Candidate Committee ID
             
-            if a1cand_committee_id not in SHITCOMMITTEES:
+            if a1cand_committee_id not in GARBAGE_COMMITTEES:
                 id_master_list.append(a1cand_committee_id)
                 
                 #Add to Entity
@@ -399,7 +396,7 @@ def parseErrything():
                 ]
                 entities.write("|".join(a1cand_entity_list) + "\n")
             
-            if a1cand_committee_id not in SHITCOMMITTEES and a1cand_id not in SHITCOMMITTEES:
+            if a1cand_committee_id not in GARBAGE_COMMITTEES and a1cand_id not in GARBAGE_COMMITTEES:
                 #Append to Candidate
                 a1cand_cand_last = row[3] #Last name
                 a1cand_cand_first = row[4] #First name
@@ -416,11 +413,16 @@ def parseErrything():
                 a1cand_office = canonOffice(a1cand_office_string, "office")
                 a1cand_gov = canonOffice(a1cand_office_string, "gov")
                 a1cand_dist = canonOffice(a1cand_office_string, "district")
+                
+                #Fixing a couple of weird edge cases
+                for item in STANDARD_CANDIDATES:
+                    a1cand_cand_full_name = a1cand_cand_full_name.upper().replace(*item).strip()
+                    a1cand_id = a1cand_id.upper().replace(*item).strip()
         
                 """
                 DB fields
                 =========
-                cand_id, cand_name, committee_id, office_dist, office_govt, office_title, stance, donor_id, notes, db_id ("")
+                cand_id, cand_name, committee_id, office_dist, office_govt, office_title, stance, donor_id, notes, db_id (""), govslug
                 """
                 a1cand_list = [
                     a1cand_id,
@@ -432,7 +434,8 @@ def parseErrything():
                     a1cand_stance,
                     "",
                     "",
-                    "",                    
+                    "",
+                    "",
                 ]
                 candidates.write("|".join(a1cand_list) + "\n")
     
@@ -514,7 +517,7 @@ def parseErrything():
         
         for row in b1reader:
             b1_entity_id = row[6]
-            if b1_entity_id not in SHITCOMMITTEES:
+            if b1_entity_id not in GARBAGE_COMMITTEES:
                 #Append ID to master list
                 id_master_list.append(b1_entity_id)
                 
@@ -589,7 +592,7 @@ def parseErrything():
             b1ab_committee_id = row[1]
             b1ab_contributor_id = row[4]
             
-            if b1ab_committee_id not in SHITCOMMITTEES:
+            if b1ab_committee_id not in GARBAGE_COMMITTEES:
                 #Append ID to master list
                 id_master_list.append(b1ab_committee_id)
                 
@@ -628,7 +631,7 @@ def parseErrything():
                 ]
                 entities.write("|".join(b1ab_committee_list) + "\n")
 
-            if b1ab_contributor_id not in SHITCOMMITTEES:
+            if b1ab_contributor_id not in GARBAGE_COMMITTEES:
                 #Append ID to master list
                 id_master_list.append(b1ab_contributor_id)
                 
@@ -673,7 +676,7 @@ def parseErrything():
                 entities.write("|".join(b1ab_contributor_list) + "\n")
 
             #Womp into donations
-            if b1ab_contributor_id not in SHITCOMMITTEES and b1ab_committee_id not in SHITCOMMITTEES:
+            if b1ab_contributor_id not in GARBAGE_COMMITTEES and b1ab_committee_id not in GARBAGE_COMMITTEES:
                 #datetest
                 b1ab_donation_date = row[5]
                 b1ab_date_test = validDate(b1ab_donation_date)
@@ -744,7 +747,7 @@ def parseErrything():
         
         for row in b1creader:
             b1c_committee_id = row[1]
-            if b1c_committee_id not in SHITCOMMITTEES:
+            if b1c_committee_id not in GARBAGE_COMMITTEES:
                 #Append ID to master list
                 id_master_list.append(b1c_committee_id)
                 
@@ -856,7 +859,7 @@ def parseErrything():
     
         for row in b1dreader:
             b1d_committee_id = row[1]
-            if b1d_committee_id not in SHITCOMMITTEES:
+            if b1d_committee_id not in GARBAGE_COMMITTEES:
                 #Append ID to master list
                 id_master_list.append(b1d_committee_id)
                 
@@ -977,7 +980,7 @@ def parseErrything():
         
         for row in b2reader:
             b2_committee_id = row[5]
-            if b2_committee_id not in SHITCOMMITTEES:
+            if b2_committee_id not in GARBAGE_COMMITTEES:
                 #Append ID to master list
                 id_master_list.append(b2_committee_id)
                 
@@ -1046,7 +1049,7 @@ def parseErrything():
             b2a_committee_id = row[0]
             b2a_contributor_id = row[2]
             
-            if b2a_committee_id not in SHITCOMMITTEES:
+            if b2a_committee_id not in GARBAGE_COMMITTEES:
                 #Append ID to master list
                 id_master_list.append(b2a_committee_id)
                 
@@ -1085,7 +1088,7 @@ def parseErrything():
                 ]
                 entities.write("|".join(b2a_committee_list) + "\n")
                 
-            if b2a_contributor_id not in SHITCOMMITTEES:
+            if b2a_contributor_id not in GARBAGE_COMMITTEES:
                 #Append ID to master list
                 id_master_list.append(b2a_contributor_id)
                 
@@ -1158,7 +1161,7 @@ def parseErrything():
             b2b_committee_id = row[0]
             b2b_target_id = row[2]
             
-            if b2b_committee_id not in SHITCOMMITTEES:
+            if b2b_committee_id not in GARBAGE_COMMITTEES:
                 #Append ID to master list
                 id_master_list.append(b2b_committee_id)
                 
@@ -1197,7 +1200,7 @@ def parseErrything():
                 ]
                 entities.write("|".join(b2b_committee_list) + "\n")
             
-            if b2b_target_id not in SHITCOMMITTEES:
+            if b2b_target_id not in GARBAGE_COMMITTEES:
                 #Append ID to master list
                 id_master_list.append(b2b_target_id)
                 
@@ -1236,7 +1239,7 @@ def parseErrything():
                 ]
                 entities.write("|".join(b2b_target_list) + "\n")
     
-            if b2b_committee_id not in SHITCOMMITTEES and b2b_target_id not in SHITCOMMITTEES:
+            if b2b_committee_id not in GARBAGE_COMMITTEES and b2b_target_id not in GARBAGE_COMMITTEES:
                 # womp expenditures into Donation or Expenditure
                 b2b_exp_date = row[5]
                 b2b_exp_date_test = validDate(b2b_exp_date)
@@ -1391,7 +1394,7 @@ def parseErrything():
         
         for row in b4reader:
             b4_committee_id = row[6]
-            if b4_committee_id not in SHITCOMMITTEES:
+            if b4_committee_id not in GARBAGE_COMMITTEES:
                 #Append ID to master list
                 id_master_list.append(b4_committee_id)
                 
@@ -1460,7 +1463,7 @@ def parseErrything():
             b4a_committee_id = row[0]
             b4a_contributor_id = row[2]
             
-            if b4a_committee_id not in SHITCOMMITTEES:
+            if b4a_committee_id not in GARBAGE_COMMITTEES:
                 #Append ID to master list
                 id_master_list.append(b4a_committee_id)
                 
@@ -1499,7 +1502,7 @@ def parseErrything():
                 ]
                 entities.write("|".join(b4a_committee_list) + "\n")
 
-            if b4a_contributor_id not in SHITCOMMITTEES:
+            if b4a_contributor_id not in GARBAGE_COMMITTEES:
                 #Append ID to master list
                 id_master_list.append(b4a_contributor_id)
                 
@@ -1539,7 +1542,7 @@ def parseErrything():
                 entities.write("|".join(b4a_contributor_list) + "\n")
                 
             #Womp into donations
-            if b4a_contributor_id not in SHITCOMMITTEES and b4a_committee_id not in SHITCOMMITTEES:
+            if b4a_contributor_id not in GARBAGE_COMMITTEES and b4a_committee_id not in GARBAGE_COMMITTEES:
                 #datetest
                 b4a_donation_date = row[3]
                 b4a_date_test = validDate(b4a_donation_date)
@@ -1615,7 +1618,7 @@ def parseErrything():
             b4b1_committee_id = row[1]
             b4b1_target_id = row[3]
             
-            if b4b1_committee_id not in SHITCOMMITTEES:
+            if b4b1_committee_id not in GARBAGE_COMMITTEES:
                 #Append ID to master list
                 id_master_list.append(b4b1_committee_id)
                 
@@ -1654,7 +1657,7 @@ def parseErrything():
                 ]
                 entities.write("|".join(b4b1_committee_list) + "\n")
                 
-            if b4b1_target_id not in SHITCOMMITTEES:
+            if b4b1_target_id not in GARBAGE_COMMITTEES:
                 #Append ID to master list
                 id_master_list.append(b4b1_target_id)
                 
@@ -1693,7 +1696,7 @@ def parseErrything():
                 ]
                 entities.write("|".join(b4b1_target_list) + "\n")
 
-            if b4b1_target_id not in SHITCOMMITTEES and b4b1_committee_id not in SHITCOMMITTEES:
+            if b4b1_target_id not in GARBAGE_COMMITTEES and b4b1_committee_id not in GARBAGE_COMMITTEES:
                 #datetest
                 b4b1_transaction_date = row[6]
                 b4b1_date_test = validDate(b4b1_transaction_date)
@@ -1845,7 +1848,7 @@ def parseErrything():
         for row in b4b2reader:
             b4b2_committee_id = row[1]
             
-            if b4b2_committee_id not in SHITCOMMITTEES:
+            if b4b2_committee_id not in GARBAGE_COMMITTEES:
             #Append ID to master list
                 id_master_list.append(b4b2_committee_id)
                 
@@ -1958,7 +1961,7 @@ def parseErrything():
         for row in b4b3reader:
             b4b3_committee_id = row[1]
             
-            if b4b3_committee_id not in SHITCOMMITTEES:
+            if b4b3_committee_id not in GARBAGE_COMMITTEES:
                 #Append ID to master list
                 id_master_list.append(b4b3_committee_id)
                 
@@ -2082,7 +2085,7 @@ def parseErrything():
             b5_committee_id = row[1]
             b5_contributor_id = row[7]
             
-            if b5_committee_id not in SHITCOMMITTEES:
+            if b5_committee_id not in GARBAGE_COMMITTEES:
                 #Append ID to master list
                 id_master_list.append(b5_committee_id)
                 
@@ -2121,7 +2124,7 @@ def parseErrything():
                 ]
                 entities.write("|".join(b5_committee_list) + "\n")
         
-            if b5_contributor_id not in SHITCOMMITTEES:
+            if b5_contributor_id not in GARBAGE_COMMITTEES:
                 #Append ID to master list
                 id_master_list.append(b5_contributor_id)
                 
@@ -2216,7 +2219,7 @@ def parseErrything():
         for row in ls:
             b6_committee_id = row[2]
             
-            if b6_committee_id not in SHITCOMMITTEES:
+            if b6_committee_id not in GARBAGE_COMMITTEES:
                 #Append ID to master list
                 id_master_list.append(b6_committee_id)
                 #Add committee to Entity
@@ -2343,7 +2346,7 @@ def parseErrything():
             b7_committee_id = row[1]
             b7_sspf_committee_id = row[8]
             
-            if b7_committee_id not in SHITCOMMITTEES:
+            if b7_committee_id not in GARBAGE_COMMITTEES:
                 #Append ID to master list
                 id_master_list.append(b7_committee_id)
                 
@@ -2382,7 +2385,7 @@ def parseErrything():
                 ]
                 entities.write("|".join(b7_committee_list) + "\n")
             
-            if b7_sspf_committee_id.strip() and b7_sspf_committee_id.strip() != "" and b7_sspf_committee_id.strip() not in SHITCOMMITTEES:
+            if b7_sspf_committee_id.strip() and b7_sspf_committee_id.strip() != "" and b7_sspf_committee_id.strip() not in GARBAGE_COMMITTEES:
                 #Append ID to master list
                 id_master_list.append(b7_sspf_committee_id.strip())
                 
@@ -2452,7 +2455,7 @@ def parseErrything():
             b72_committee_id = row[3]
             b72_contributor_id = row[1]
             
-            if b72_committee_id not in SHITCOMMITTEES:
+            if b72_committee_id not in GARBAGE_COMMITTEES:
                 #Append ID to master list
                 id_master_list.append(b72_committee_id)
                 
@@ -2491,7 +2494,7 @@ def parseErrything():
                 ]
                 entities.write("|".join(b72_committee_list) + "\n")
             
-            if b72_contributor_id not in SHITCOMMITTEES:
+            if b72_contributor_id not in GARBAGE_COMMITTEES:
                 #Append ID to master list
                 id_master_list.append(b72_contributor_id)
                 
@@ -2530,7 +2533,7 @@ def parseErrything():
                 entities.write("|".join(b72_contributor_list) + "\n")
 
             #womp into Donation                
-            if b72_committee_id not in SHITCOMMITTEES and b72_contributor_id not in SHITCOMMITTEES:
+            if b72_committee_id not in GARBAGE_COMMITTEES and b72_contributor_id not in GARBAGE_COMMITTEES:
                 #datetest
                 b72_donation_date = row[4]
                 b72_date_test = validDate(b72_donation_date)
@@ -2608,7 +2611,7 @@ def parseErrything():
             b73_committee_id = row[3]
             b73_contributor_id = row[1]
             
-            if b73_committee_id not in SHITCOMMITTEES:
+            if b73_committee_id not in GARBAGE_COMMITTEES:
                 #Append ID to master list
                 id_master_list.append(b73_committee_id)
                 
@@ -2647,7 +2650,7 @@ def parseErrything():
                 ]
                 entities.write("|".join(b73_committee_list) + "\n")
                 
-            if b73_contributor_id not in SHITCOMMITTEES:
+            if b73_contributor_id not in GARBAGE_COMMITTEES:
                 #Append ID to master list
                 id_master_list.append(b73_contributor_id)
                 
@@ -2686,7 +2689,7 @@ def parseErrything():
                 ]
                 entities.write("|".join(b73_contributor_list) + "\n")
             
-            if b73_committee_id not in SHITCOMMITTEES and b73_contributor_id not in SHITCOMMITTEES:
+            if b73_committee_id not in GARBAGE_COMMITTEES and b73_contributor_id not in GARBAGE_COMMITTEES:
                 #date test
                 b73_exp_date = row[4]
                 b73_exp_date_test = validDate(b73_exp_date)
@@ -2770,7 +2773,7 @@ def parseErrything():
         for row in b9reader:
             b9_committee_id = row[2]
             
-            if b9_committee_id not in SHITCOMMITTEES:
+            if b9_committee_id not in GARBAGE_COMMITTEES:
                 #Append ID to master list
                 id_master_list.append(b9_committee_id)
                 #Add committee to Entity
@@ -2856,7 +2859,7 @@ def parseErrything():
             b9_exp_committee_id = row[2]
             b9_exp_recipient_id = row[13]
             
-            if b9_exp_committee_id not in SHITCOMMITTEES:
+            if b9_exp_committee_id not in GARBAGE_COMMITTEES:
                 #Append ID to master list
                 id_master_list.append(b9_exp_committee_id)
                 
@@ -2894,7 +2897,7 @@ def parseErrything():
                 ]
                 entities.write("|".join(b9_exp_committee_list) + "\n")
                 
-            if b9_exp_recipient_id not in SHITCOMMITTEES:
+            if b9_exp_recipient_id not in GARBAGE_COMMITTEES:
                 #Append ID to master list
                 id_master_list.append(b9_exp_recipient_id)
                 
@@ -2933,7 +2936,7 @@ def parseErrything():
                 ]
                 entities.write("|".join(b9_exp_recipient_list) + "\n")
                 
-            if b9_exp_committee_id not in SHITCOMMITTEES and b9_exp_recipient_id not in SHITCOMMITTEES:
+            if b9_exp_committee_id not in GARBAGE_COMMITTEES and b9_exp_recipient_id not in GARBAGE_COMMITTEES:
                 #datecheck
                 b9_exp_date = row[16]
                 b9_exp_date_test = validDate(b9_exp_date)
@@ -3134,7 +3137,7 @@ def parseErrything():
             b11_candidate_id = row[14]
             b11_ballot_id = row[16]
             
-            if b11_committee_id not in SHITCOMMITTEES:
+            if b11_committee_id not in GARBAGE_COMMITTEES:
                 #Append ID to master list
                 id_master_list.append(b11_committee_id)
                 
@@ -3377,7 +3380,7 @@ def parseErrything():
                 interimdict['canonical_id'] = canonical_id
                 
                 #Unpack lookup to replace known bad strings
-                for item in SHITSTRINGS:
+                for item in GARBAGE_STRINGS:
                     name = name.upper().replace(*item).strip()
                     canonical_name = canonical_name.upper().replace(*item).strip()
                 
@@ -3469,6 +3472,54 @@ def parseErrything():
         local('csvcut -x -d "|" -c db_id,cash,inkind,pledge,inkind_desc,donation_date,donor_id,recipient_id,donation_year,notes,stance,donor_name ' + THISPATH + 'nadc_data/toupload/donations_almost_there.txt | csvformat -D "|" | sed -e \'1d\' -e \'s/\"//g\' > ' + THISPATH + 'nadc_data/toupload/donations.txt', capture=False)
     
     print "\n\nDONE."
+
+
+    
+@hosts('dataomaha.com')    
+def goLive():
+    "Upload last_updated file to live server, load SQL dumps into DO database"
+    
+    env.user = configlist[2]
+    env.password = configlist[3]
+    
+    with hide('running', 'stdout', 'stderr'):
+        put(THISPATH + 'nadc_data/last_updated.py', configlist[6] + "nadc/")
+        put(THISPATH + 'nadc_data/toupload/*.sql.gz', configlist[8] + "nadc/")
+        run('cd ' + configlist[8] + 'nadc/ && for z in *.gz; do gunzip -f $z; done && for s in *.sql; do mysql -u ' + configlist[2] + ' -p' + configlist[4] + ' ' + configlist[2] + ' < $s; done')
+        
     
 def tweetIt():
-    pass
+    "Tweet any interesting things that pop up this week"
+    
+    """
+    with open("../config.txt", "rb") as w:
+         l = w.readlines()
+    
+    t = Twitter(auth=OAuth(
+        configlist[9],
+        configlist[10],
+        configlist[11],
+        configlist[12])
+    ))
+    
+    text = "Pssst. Got a new batch of Nebraska campaign finance data in today: http://dataomaha.com/campaign-finance"
+    
+    pic = "https://media.giphy.com/media/qi8Yhj4pKcIec/giphy.gif"
+    
+    r = requests.get(pic, stream = True)
+    if r.status_code == 200:
+        r.raw.decode_content = True
+        imagedata = r.raw.read()
+
+        t_up = Twitter(domain='upload.twitter.com',
+            auth=OAuth(
+            configlist[9],
+            configlist[10],
+            configlist[11],
+            configlist[12])
+        ))
+        
+        id_img = t_up.media.upload(media=imagedata)["media_id_string"]
+        
+        t.statuses.update(status=text, media_ids=id_img)
+    """

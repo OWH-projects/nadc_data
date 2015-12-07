@@ -16,6 +16,7 @@ printf "~~ fetched 'at data ~~\n\n"
 #parse the "last updated" date
 printf "\n~~ parsing \"last updated\" date ~~\n"
 fab getDate
+\cp ${P}nadc_data/last_updated.py ${P}nadc/last_updated.py
 printf "~~ parsed \"last updated\" date ~~\n\n"
 
 #make backup copies of everything

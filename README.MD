@@ -7,7 +7,7 @@ Scripts to process data from the Nebraska Accountability and Disclosure Commissi
 - [pandas!](http://pandas.pydata.org/pandas-docs/stable/)  
 - [fabric](http://www.fabfile.org/)
 
-The NADC now offers <a href="http://www.nebraska.gov/data.html" target="_blank">weekly updates</a> of campaign finance data. Sunday nights, our script fetches new data, parses it and returns a set of clean files that our app can ingest. The update process:
+The NADC now offers <a href="http://www.nebraska.gov/data.html" target="_blank">weekly updates</a> of campaign finance data. Every Monday, our script fetches new data, parses it and returns a set of clean files that our app can ingest. The update process:
 <ol>
 <li>Run <code>parser.sh</code></li>
 <li>If there are new, invalid dates that we haven't encountered in the past, you'll be prompted to add those to <code>canonical/canonical.py</code></li>
@@ -51,6 +51,8 @@ A shell script, `parser.sh`, makes backups of the raw data and boils down these 
 <li><code>toupload/expenditures.txt</code>: Expenditures.</li>
 </ul>
 
+Then, the script bakes out some SQL to upload to our live server.
+
 ##Handling duplication
 ###Names
 NADC has unique identifiers for each donor, but they identify only the address and exact name. If "Matt Wynn" at 1314 Douglas St. gave money, and "Matthew A Wynn" at 1300 Douglas St. gave money, they're considered two different donors.
@@ -80,5 +82,6 @@ To get an exhaustive list of ID'd entities, the script slurps up a half-million 
 ##Data excluded
 <ul>
 <li>Pre-1999 records, which the NADC does not consider especially reliable.</li>
-<li>The handful of record detail in <code>Form B6CONT</code>, which is part of a group of cleanup files for expenditures that aren't recorded elsewhere. It is a garbage fire.</li>
+<li><code>Form B6CONT</code>, part of a group of cleanup files for expenditures that aren't recorded elsewhere. It is a garbage fire.</li>
+<li>Records associated with candidate committee No. 99CAC00167, Friends of Doug Kristensen, which was related to Mr. Kristensen's candidacy for a delegate slot at the 1996 Republican National Convention. As far as we can tell, this is the only time a candidacy for party delegate shows up in the data.</li>
 </ul>

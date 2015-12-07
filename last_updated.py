@@ -1,3 +1,3 @@
 import datetime
 
-LAST_UPDATED = datetime.date(2015, 11, 30)
+LAST_UPDATED = datetime.date(2015, 12, 7)

@@ -14,8 +14,11 @@ import requests
 
 fabric.state.output.status = False
 
-#cache list of config vals
 def getConfig():
+    """
+    Cache list of config values.
+    """
+    
     with open("../config.txt", "rb") as w:
         c = w.readlines()
         c = [linebr.replace("\n", "") for linebr in c]
@@ -25,7 +28,10 @@ configlist = getConfig()
 THISPATH = configlist[5]
 
 def validDate(datestring):
-    "Check for known bad dates, invalid dates, dates in the future."
+    """
+    Check for known bad dates, invalid dates, dates in the future
+    """
+    
     try:
         return GARBAGE_DATES[datestring]
     except:
@@ -42,7 +48,10 @@ def validDate(datestring):
 
 
 def getFloat(i):
-    "Return a float or 0.0."
+    """
+    Return a float or 0.0
+    """
+    
     if not i or i == "":
         return "0.0"
     else:
@@ -50,7 +59,10 @@ def getFloat(i):
 
 
 def lookItUp(input, param, namefield):
-    "Function to check if a record exists in canonical donors lookup dict"
+    """
+    Check if a record exists in canonical donors lookup dict
+    """
+    
     try:
         return str(CANON[input][param])
     except:
@@ -61,7 +73,10 @@ def lookItUp(input, param, namefield):
 
 
 def canonFlag(input):
-    "Temporary workaround to display front-page canonical records"
+    """
+    Temporary workaround to display front-page canonical records
+    """
+    
     try:
         x = CANON[input]
         return "I"
@@ -70,7 +85,10 @@ def canonFlag(input):
 
 
 def canonOffice(rawstring, param):
-    "Hit the office canonical dict to standardize office names"
+    """
+    Hit the office canonical dict to standardize office names
+    """
+    
     try:
         x = CANON_OFFICE[rawstring][param]
         return x
@@ -79,7 +97,10 @@ def canonOffice(rawstring, param):
         
 
 def getDate():
-    "Parse the last updated date from a file in the NADC data dump."
+    """
+    Parse the "last updated" date from a file in the NADC data dump
+    """
+    
     q = open(THISPATH + "nadc_data/last_updated.py", "wb")
     with open(THISPATH + "nadc_data/DATE_UPDATED.TXT", "rb") as d:
         last_updated = d.readline().split(": ")[1].split(" ")[0].split("-")
@@ -3251,7 +3272,7 @@ def parseErrything():
     loans.close()
     expenditures.close()
     
-    #check for len() of new bad dates
+    #check for new bad dates
     if len(rows_with_new_bad_dates) > 0:
         if len(rows_with_new_bad_dates) == 1:
             s = "1 record with a bad date"
@@ -3477,7 +3498,9 @@ def parseErrything():
     
 @hosts('dataomaha.com')    
 def goLive():
-    "Upload last_updated file to live server, load SQL dumps into DO database"
+    """
+    Upload last_updated.py to live server, load SQL dumps into Dataomaha database
+    """
     
     env.user = configlist[2]
     env.password = configlist[3]
@@ -3485,11 +3508,13 @@ def goLive():
     with hide('running', 'stdout', 'stderr'):
         put(THISPATH + 'nadc_data/last_updated.py', configlist[6] + "nadc/")
         put(THISPATH + 'nadc_data/toupload/*.sql.gz', configlist[8] + "nadc/")
-        run('cd ' + configlist[8] + 'nadc/ && for z in *.gz; do gunzip -f $z; done && for s in *.sql; do mysql -u ' + configlist[2] + ' -p' + configlist[4] + ' ' + configlist[2] + ' < $s; done')
+        run('cd ' + configlist[8] + 'nadc/ && for z in *.gz; do gunzip -f $z; done && for s in *.sql; do mysql -u ' + configlist[2] + ' -p' + configlist[4] + ' ' + configlist[2] + ' < $s; done && cd ' + configlist[6] + ' && ../../apache2/bin/restart')
         
     
 def tweetIt():
-    "Tweet any interesting things that pop up this week"
+    """
+    Tweet any interesting things that pop up this week
+    """
     
     """
     with open("../config.txt", "rb") as w:

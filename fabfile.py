@@ -1748,6 +1748,7 @@ def parseErrything():
                     b4b1_year = b4b1_date_test.split("-")[0]
                     if int(b4b1_year) >= 1999:
                         b4b1_transaction_type = row[5].upper().strip()
+                        #(D=Direct Expenditure, I=In-Kind Expenditure, L=Loan, E=Independent Expenditure)
                         
                         #Is it a loan?
                         if b4b1_transaction_type == "L":

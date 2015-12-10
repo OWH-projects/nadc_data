@@ -79,6 +79,6 @@ To get an exhaustive list of ID'd entities, the script slurps up a half-million 
 ##Data excluded
 <ul>
 <li>Pre-1999 records, which the NADC does not consider especially reliable.</li>
-<li><code>Form B6CONT</code>, part of a group of cleanup files for expenditures that aren't recorded elsewhere. It is a garbage fire.</li>
+<li>The small number of detail records in<code>Form B6CONT</code>, part of a group of cleanup files for expenditures that aren't recorded elsewhere. It is more trouble than it's worth to pull in.</li>
 <li>Records associated with candidate committee No. 99CAC00167, Friends of Doug Kristensen, which was related to Mr. Kristensen's candidacy for a delegate slot at the 1996 Republican National Convention. As far as we can tell, this is the only time a candidacy for party delegate shows up in the data.</li>
 </ul>

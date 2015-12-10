@@ -156,7 +156,6 @@ def parseErrything():
     rows_with_new_bad_dates = []
     
     entities = open(THISPATH + "nadc_data/toupload/entity-raw.txt", "wb")
-    ballotq = open(THISPATH + "nadc_data/toupload/ballot-raw.txt", "wb")
     candidates = open(THISPATH + "nadc_data/toupload/candidate.txt", "wb")
     donations = open(THISPATH + "nadc_data/toupload/donations-raw.txt", "wb")
     loans = open(THISPATH + "nadc_data/toupload/loan.txt", "wb")
@@ -195,17 +194,6 @@ def parseErrything():
         "date_we_care_about"
         ]
     entities.write("|".join(entities_headers) + "\n")
-
-    ballot_headers = [
-        "db_id",
-        "name",
-        "ballot_type",
-        "stance",
-        "nadc_id",
-        "notes",
-        "date_we_care_about"
-        ]
-    ballotq.write("|".join(ballot_headers) + "\n")
     
     print "\nPARSING RAW FILES"
     
@@ -213,7 +201,7 @@ def parseErrything():
         """
         FormA1: Top-level table for committees. Supposed to include all committees in FormB1, FormB4, FormB2 reports, but we are going to be paranoid and not assume this is the case.
         
-        Data is fed to Entity and BallotQ tables
+        Data is fed to Entity and Candidate tables. (We're treating ballot questions as candidates.)
         
         COLUMNS
         =======
@@ -330,21 +318,48 @@ def parseErrything():
                 if row[6].upper().strip() == "B":
                     a1_nadc_id = row[0]
                     if a1_nadc_id not in GARBAGE_COMMITTEES:
+                        a1_entity_name = ' '.join((row[1].upper().strip()).split()).replace('"',"") #Committee name
                         a1_ballot = ' '.join((row[10].upper().strip()).split()).replace('"',"")
-                        a1_ballot_type = row[12]
-                        a1_ballot_stance = row[11]
-                        a1_ballot_date_of_thing_happening = row[7] #Date used to eval recency on dedupe
+                        a1_ballot_type = row[12].upper().strip() #(I=Initiative, R=Recall, F=Referendum, C=Constitutional Amendment)
+                        a1_ballot_stance = row[11].strip() #(0=Support, 1=Oppose)
                         
-                        ballotq_list = [
-                            "",
-                            a1_ballot,
-                            a1_ballot_type,
-                            a1_ballot_stance,
+                        #Unpack lookup to replace known bad strings
+                        for item in GARBAGE_STRINGS:
+                            a1_entity_name = a1_entity_name.upper().strip().replace(*item)
+
+                        ballot_types = {
+                            "I": "Initiative",
+                            "R": "Recall",
+                            "F": "Referendum",
+                            "C": "Constitutional Amendment",
+                            "O": "Other"
+                        }
+                        
+                        def ballotType(str):
+                            try:
+                                return ballot_types[str]
+                            except:
+                                return "Uncategorized"
+                
+                        """
+                        DB fields
+                        =========
+                        cand_id, cand_name, committee_id, office_dist, office_govt, office_title, stance, donor_id, notes, db_id (""), govslug
+                        """
+                        a1_ballot_cand_list = [
+                            "BQCAND" + a1_nadc_id,
+                            a1_entity_name,
                             a1_nadc_id,
                             "",
-                            a1_ballot_date_of_thing_happening,
+                            "Ballot question",
+                            ballotType(a1_ballot_type),
+                            a1_ballot_stance,
+                            "",
+                            a1_ballot,
+                            "",
+                            ""
                         ]
-                        ballotq.write("|".join(ballotq_list) + "\n")
+                        candidates.write("|".join(a1_ballot_cand_list) + "\n")
 
     
     with open('forma1cand.txt', 'rb') as a1cand:
@@ -381,7 +396,6 @@ def parseErrything():
                 id_master_list.append(a1cand_committee_id)
                 
                 #Add to Entity
-
                 a1cand_entity_name = ""
                 a1cand_address = ""
                 a1cand_city = ""
@@ -3267,7 +3281,6 @@ def parseErrything():
             
     entities.close()
     candidates.close()
-    ballotq.close()
     donations.close()
     loans.close()
     expenditures.close()
@@ -3282,37 +3295,6 @@ def parseErrything():
         for thing in rows_with_new_bad_dates:
             print thing
         #local("killall parser.sh", capture=False)
-    
-    
-    """
-    Dedupe ballot question file
-    =========
-    - csvsort ballot-raw.txt by date_we_care_about descending (--reverse)
-    - pandas drop_duplicates, keep first record, export
-    """
-    
-    print "\n\nPREPPING BALLOT QUESTION FILE"
-    print "    sorting ..."
-    
-    #sort input file by date
-    with hide('running', 'stdout', 'stderr'):
-        local('csvsort -d "|" -c 7 --reverse ' + THISPATH + 'nadc_data/toupload/ballot-raw.txt | csvformat -D "|" | sed -e \'s/\"//g\' -e \'s/\&AMP;//g\' > ' + THISPATH + 'nadc_data/toupload/ballot_sorted.txt', capture=False)
-    
-    print "    deduping ..."
-    #dedupe sorted file
-    clean_ballot = pd.read_csv(THISPATH + "nadc_data/toupload/ballot-raw.txt", delimiter="|", dtype={
-        "dbid": object,
-        "name": object,
-        "ballot_type": object,
-        "stance": object,
-        "nadc_id": object,
-        "notes": object,
-        "date_we_care_about": object,
-        }
-    )
-    
-    deduped_ballot = clean_ballot.drop_duplicates(subset=["name", "nadc_id"])
-    deduped_ballot.to_csv(THISPATH + 'nadc_data/toupload/ballot.txt', sep="|", header=False, index=False)
 
     
     """

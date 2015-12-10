@@ -1,7 +1,5 @@
 #NADC data
 
-<img src="https://media.giphy.com/media/Kerg053G7ZJUQ/giphy.gif" style="width:100%;" />
-
 Scripts to process data from the Nebraska Accountability and Disclosure Commission into something <a href="https://github.com/OWH-projects/nadc">our campaign finance app</a> can import. Run `pip install -r requirements.txt` to install the dependencies:
 - [csvkit](https://csvkit.readthedocs.org/en/0.9.1/)  
 - [pandas!](http://pandas.pydata.org/pandas-docs/stable/)  
@@ -9,7 +7,7 @@ Scripts to process data from the Nebraska Accountability and Disclosure Commissi
 
 The NADC now offers <a href="http://www.nebraska.gov/data.html" target="_blank">weekly updates</a> of campaign finance data. Every Monday, our script fetches new data, parses it and returns a set of clean files that our app can ingest. The update process:
 <ol>
-<li>Run <code>parser.sh</code></li>
+<li>Run <code>./parser.sh</code></li>
 <li>If there are new, invalid dates that we haven't encountered in the past, you'll be prompted to add those to <code>canonical/canonical.py</code></li>
 </ol>
 
@@ -41,12 +39,11 @@ A standard data dump from the NADC yields 61 pipe-delimited text files (data dic
 <li><strong>Form B11</strong>: Report of late independent expenditure</li>
 </ul>
 
-A shell script, `parser.sh`, makes backups of the raw data and boils down these 24 files (which contain some duplicate transactions) into six data tables:
+A shell script, `parser.sh`, makes backups of the raw data and boils down these 24 files (which contain some duplicate transactions) into five data tables:
 <ul>
 <li><code>toupload/entity.txt</code>: Any group, committee, donor, lender or other entity that has been assigned a unique ID by the NADC. This is the parent table.</li>
-<li><code>toupload/ballot.txt</code>: Ballot question committees.</li>
 <li><code>toupload/donations.txt</code>: Money, inkind donations and pledges.</li>
-<li><code>toupload/candidates.txt</code>: Candidates tied to campaign committees.</li>
+<li><code>toupload/candidates.txt</code>: Candidates tied to campaign committees and ballot questions.</li>
 <li><code>toupload/loans.txt</code>: Lending.</li>
 <li><code>toupload/expenditures.txt</code>: Expenditures.</li>
 </ul>

@@ -2511,10 +2511,11 @@ ID|Lobbyist Last Name|Lobbyist First Name|Principal Name|Statement Due|Due Date|
 2580|Jones|Johnny|Little Priest Tribal College|Statement of Activity|2015-07-13|2015-08-10|700.00|REDUCED|0.00|2015-08-11||
 2581|Jones|Johnny|Little Priest Tribal College|2nd Quarter Report|2015-07-30|2015-08-10|275.00|REDUCED|0.00|2015-08-11||
 2582|Roque|Matthew|ProRail Nebraska|2nd Quarter Report|2015-07-30|2015-08-05|150.00|REDUCED|0.00|2015-08-12||
-2583|Johnson|Larry|NE Trucking Association|3rd Quarter Report|2015-10-30|2015-11-02|75.00|PENDING||||
-2584|Kopacki|Christopher|National Rifle Association|3rd Quarter Report|2015-10-30|2015-11-09|250.00|PENDING||||
+2583|Johnson|Larry|NE Trucking Association|3rd Quarter Report|2015-10-30|2015-11-02|75.00|PAID|||2015-12-03|
+2584|Kopacki|Christopher|National Rifle Association|3rd Quarter Report|2015-10-30|2015-11-09|250.00|REDUCED|0.00|2015-11-24||
 2585|Langston|Charles|NE Family Alliance|3rd Quarter Report|2015-10-30|2015-11-04|125.00|REDUCED|0.00|2015-11-06||
-2586|Lautenbaugh|Scott|Heartland Strategy Group|3rd Quarter Report|2015-10-30|2015-11-01|50.00|PENDING||||
-2587|Lautenbaugh|Scott|Convention of States Action|3rd Quarter Report|2015-10-30|2015-11-04|125.00|PENDING||||
-2588|Lautenbaugh|Scott|NE Premium Tobacco|3rd Quarter Report|2015-10-30|2015-11-04|125.00|PENDING||||
-2589|Lautenbaugh|Scott|SMART - TD|3rd Quarter Report|2015-10-30|2015-11-04|125.00|PENDING||||
+2586|Lautenbaugh|Scott|Heartland Strategy Group|3rd Quarter Report|2015-10-30|2015-11-01|50.00|PAID|||2015-12-07|
+2587|Lautenbaugh|Scott|Convention of States Action|3rd Quarter Report|2015-10-30|2015-11-04|125.00|PAID|||2015-12-07|
+2588|Lautenbaugh|Scott|NE Premium Tobacco|3rd Quarter Report|2015-10-30|2015-11-04|125.00|PAID|||2015-12-07|
+2589|Lautenbaugh|Scott|SMART - TD|3rd Quarter Report|2015-10-30|2015-11-04|125.00|PAID|||2015-12-07|
+2590|Petersen|Scott|Printing Industries of the Midlands|3rd Quarter Report|2015-10-30|2015-11-23|600.00|REDUCED|0.00|2015-12-11||

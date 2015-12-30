@@ -4542,13 +4542,18 @@ ID|Corporation Name|Month Of Contribution|Due Date|Date Filed|Amount|Status|Redu
 4748|Ho-Chunk, Inc.|July|2015-08-10|2015-09-28|750.00|PAID|||2015-09-28|
 4749|Microsoft Corporation|June|2015-07-10|2015-08-17|750.00|PENDING||||
 4750|NE Horsemans Benevolent & Protective Assn.|May|2015-06-10|2015-09-30|750.00|PENDING||||
-4751|Bruning Law Group|January|2015-10-13|2015-10-23|250.00|REDUCED|0.00|2015-11-22||
+4751|Bruning Law Group|September|2015-10-13|2015-10-23|250.00|REDUCED|0.00|2015-11-22||
 4752|Croker Huck Kasher Dewitt Anderson & Gonderinger LLC|July|2015-08-10|2015-10-05|750.00|RED/PAID|25.00|2015-10-30|2015-10-30|
 4756|Ho-Chunk|September|2015-10-13|2015-10-23|250.00|PAID|||2015-10-23|
+4764|NE Horsemens Benevolent & Protective Assn.|May|2015-06-10|2015-09-30|750.00|PENDING||||
 4754|Ho-Chunk|June|2015-07-10|2015-10-23|750.00|PAID|||2015-10-23|
 4755|Ho-Chunk|August|2015-09-10|2015-10-23|750.00|PAID|||2015-10-23|
 4759|Equal Justice USA|October|2015-10-13|2015-10-20|700.00|PENDING||||
 4753|Harms Oil Company DBA Central States Petroleum|July|2015-08-10|2015-10-15|750.00|REDUCED|0.00|2015-10-28||
 4760|First National of Nebraska|October|2015-11-10|2015-11-12|50.00|PENDING||||
-4758|Bruning Law Office|January|2015-10-13|2015-11-03|525.00|RED/PAID|25.00|2015-11-23|2015-11-23|
+4761|ANR Northern Border Pipeline Company|October|2015-11-10|2015-12-01|525.00|PENDING||||
+4758|Bruning Law Office|September|2015-10-13|2015-11-03|525.00|RED/PAID|25.00|2015-11-23|2015-11-23|
+4763|District OR-1 Education Association|September|2015-10-13|2015-11-30|750.00|REDUCED|0.00|2015-12-10||
+4765|Transcanada Keystone Pipeline LP|October|2015-11-10|2015-12-01|525.00|PENDING||||
 4757|NE State Legislative Board|September|2015-10-13|2015-10-19|150.00|REDUCED|0.00|2015-10-29||
+4762|First National Bank of Nebraska|October|2015-11-10|2015-11-12|50.00|REDUCED|0.00|2015-12-01||

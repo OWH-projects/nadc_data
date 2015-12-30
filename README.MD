@@ -35,7 +35,6 @@ A standard data dump from the NADC yields 61 pipe-delimited text files (data dic
 <li><strong>Form B72</strong>: Donations by corporations, unions and other associations</li>
 <li><strong>Form B73</strong>: Indirect contributions by corporations, unions and other associations</li>
 <li><strong>Form B9</strong>: Out of state expenditures/donations</li>
-<li><strong>Form B9B</strong>: Out of state expenditures</li>
 <li><strong>Form B11</strong>: Report of late independent expenditure</li>
 </ul>
 
@@ -65,7 +64,7 @@ Some donations are recorded in several places. A late donation, for instance, ma
 
 Donations can also be duplicated within a table, inaccurately. For example, a 1999 ballot committee reported each of its donations twice, leading to a vastly inflated fundraising report.
 
-Susan Lorenz at the Nebraska Accountability and Disclosure Commission told us that donations from a giver to an organization on the same day should not be duplicated. Therefore, we deduplicated using those three values.
+Susan Lorenz at the Nebraska Accountability and Disclosure Commission said donations of the same amount given on the same day to the same organization are duplicates. Therefore, we deduplicated using those three values.
 
 ##Known problems
 ###Dates
@@ -80,5 +79,6 @@ To get an exhaustive list of ID'd entities, the script slurps up a half-million 
 <ul>
 <li>Pre-1999 records, which the NADC does not consider especially reliable.</li>
 <li>The small number of detail records in<code>Form B6CONT</code>, part of a group of cleanup files for expenditures that aren't recorded elsewhere. It is more trouble than it's worth to pull in.</li>
-<li>Records associated with candidate committee No. 99CAC00167, Friends of Doug Kristensen, which was related to Mr. Kristensen's candidacy for a delegate slot at the 1996 Republican National Convention. As far as we can tell, this is the only time a candidacy for party delegate shows up in the data.</li>
+<li>Out-of-state expenditures and donations listed in forms B9A and B9B, which are problematically duplicated in other tables.</li>
+<li>Records associated with candidate committee No. 99CAC00167, Friends of Doug Kristensen, which was related to Mr. Kristensen's candidacy for a delegate slot at the 1996 Republican National Convention. As far as we can tell, this is the only time a candidacy for party conention delegate shows up in the data.</li>
 </ul>

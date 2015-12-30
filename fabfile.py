@@ -144,7 +144,6 @@ def parseErrything():
         B72: Direct contributions by corporations, unions and other associations
         B73: Indirect contributions by corporations, unions and other associations
         B9: Out of state expenditures/donations
-        B9B: Out of state expenditures
         B11: Report of late independent expenditure    
         
     Assumptions:
@@ -2848,288 +2847,8 @@ def parseErrything():
                 entities.write("|".join(b9_committee_list) + "\n")
         
     
-    #use csvjoin on b9b, yo
     
-    """
-    FormB9B: Out-of-state expenditures, donations, loans
-
-    Data is added to Entity, Expenditure, Donation, Loan
     
-    COLUMNS
-    =======
-    0: Contributor Name
-    1: Form ID
-    2: Contributor ID
-    3: Postmark Date
-    4: Date Received
-    5: Microfilm Number
-    6: Contributor Type
-    7: Date Last Revised
-    8: Last Revised By
-    9: Contributor Phone
-    10: Contributor Name
-    11: Form B9 ID
-    12: Form ID
-    13: Recipient ID
-    14: Support/Oppose
-    15: Nature of Expenditure
-    16: Expenditure Date
-    17: Previous Total
-    18: Amount
-    19: Total
-    20: Description
-    21: Entry Date
-    22: Recipient Name
-    
-    """
-    
-    print "    formb9b ..."
-    
-    with hide('running', 'stdout', 'stderr'):
-        stitched_b9exp = local('csvjoin -d "|" -c "Form ID,Form B9 ID" --right formb9.txt formb9b.txt | csvformat -D "|" |  sed -e \'1d\'', capture=True)
-        
-        ls = []
-        for dude in stitched_b9exp.split("\n"):
-            ls.append(dude.split("|"))
-        for row in ls:
-            b9_exp_committee_id = row[2]
-            b9_exp_recipient_id = row[13]
-            
-            if b9_exp_committee_id not in GARBAGE_COMMITTEES:
-                #Append ID to master list
-                id_master_list.append(b9_exp_committee_id)
-                
-                #Add committee to Entity
-                b9_exp_committee_name = ' '.join((row[10].strip().upper()).split()).replace('"',"") #committee name
-                b9_exp_committee_address = "" #Address
-                b9_exp_committee_city = "" #City
-                b9_exp_committee_state = "" #State
-                b9_exp_committee_zip = "" #ZIP
-                #b9_exp_committee_type = row[6].upper().strip() #committee type (C=Corporation, L=Labor Organization, I=Industry or Trade Organization, P=Professional Association)
-                b9_exp_committee_type = canonFlag(b9_exp_committee_id) # canonical flag
-                b9_exp_entity_date_of_thing_happening = row[4] #Date used to eval recency on dedupe
-                
-                """
-                DB fields
-                ========
-                nadcid, name, address, city, state, zip, entity_type, notes, employer, occupation, place_of_business, dissolved_date
-                
-                We're adding b9_exp_entity_date_of_thing_happening so that later we can eval for recency on dedupe.
-                """
-                
-                b9_exp_committee_list = [
-                    b9_exp_committee_id,
-                    b9_exp_committee_name,
-                    b9_exp_committee_address,
-                    b9_exp_committee_state,
-                    b9_exp_committee_zip,
-                    b9_exp_committee_type,
-                    "",
-                    "",
-                    "",
-                    "",
-                    "",
-                    b9_exp_entity_date_of_thing_happening,
-                ]
-                entities.write("|".join(b9_exp_committee_list) + "\n")
-                
-            if b9_exp_recipient_id not in GARBAGE_COMMITTEES:
-                #Append ID to master list
-                id_master_list.append(b9_exp_recipient_id)
-                
-                #Add recipient to Entity
-                b9_exp_recipient_name = ' '.join((row[22].strip().upper()).split()).replace('"',"") #recipient name
-                b9_exp_recipient_address = "" #Address
-                b9_exp_recipient_city = "" #City
-                b9_exp_recipient_state = "" #State
-                b9_exp_recipient_zip = "" #ZIP
-                #b9_exp_recipient_type = "" #committee type (C=Corporation, L=Labor Organization, I=Industry or Trade Organization, P=Professional Association)
-                b9_exp_recipient_type = canonFlag(b9_exp_recipient_id) # canonical flag
-                b9_exp_entity_date_of_thing_happening = row[4] #Date used to eval recency on dedupe
-                
-                """
-                DB fields
-                ========
-                nadcid, name, address, city, state, zip, entity_type, notes, employer, occupation, place_of_business, dissolved_date
-                
-                We're adding b9_exp_entity_date_of_thing_happening so that later we can eval for recency on dedupe.
-                """
-                
-                b9_exp_recipient_list = [
-                    b9_exp_recipient_id,
-                    b9_exp_recipient_name,
-                    b9_exp_recipient_address,
-                    b9_exp_recipient_city,
-                    b9_exp_recipient_state,
-                    b9_exp_recipient_zip,
-                    b9_exp_recipient_type,
-                    "",
-                    "",
-                    "",
-                    "",
-                    "",
-                    b9_exp_entity_date_of_thing_happening,
-                ]
-                entities.write("|".join(b9_exp_recipient_list) + "\n")
-                
-            if b9_exp_committee_id not in GARBAGE_COMMITTEES and b9_exp_recipient_id not in GARBAGE_COMMITTEES:
-                #datecheck
-                b9_exp_date = row[16]
-                b9_exp_date_test = validDate(b9_exp_date)
-                if b9_exp_date_test == "broke":
-                    b9_dict = {}
-                    b9_dict["donor_id"] = row[2]
-                    b9_dict["recipient_id"] = row[13]
-                    b9_dict["lookup_name"] = ' '.join((row[22].strip().upper()).split()).replace('"',"")
-                    b9_dict["source_table"] = "b9b"
-                    b9_dict["destination_table"] = "expenditures_loans_donations"
-                    b9_dict["donation_date"] = b9_exp_date
-                    rows_with_new_bad_dates.append(b9_dict)
-                else:
-                    b9_year = b9_exp_date_test.split("-")[0]
-                    if int(b9_year) >= 1999:
-                        #what kind is it?
-                        b9_contrib_type = row[15].upper().strip() #(A=Direct Contribution, B=In-Kind Contribution, C=Loans, D=Independent Expenditure, E=Pledge)
-                        
-                        if b9_contrib_type == "L":
-                            # do loan shiz here
-                            b9_lender_name = ' '.join((row[0].strip().upper()).split()).replace('"',"")
-                            b9_lender_addr = ""
-                            b9_loan_amount = row[18]
-                            b9_loan_repaid = ""
-                            b9_loan_forgiven = ""
-                            b9_loan_paid_by_third_party = ""
-                            b9_loan_guarantor = ""
-                            b9_loan_committee_id = row[13]
-                            b9_loan_stance = row[14].upper().strip() # (S=Support, O=Oppose)
-                            if b9_loan_stance == "S":
-                                b9_loan_stance = "0"
-                            elif b9_loan_stance == "0":
-                                b9_loan_stance = "1"
-                            else:
-                                b9_loan_stance = ""
-                            b9_loan_lending_committee_id = row[2] #lending committee ID
-                            
-                            """
-                            DB fields
-                            ========
-                            db_id, lender_name, lender_addr, loan_date, loan_amount, loan_repaid, loan_forgiven, paid_by_third_party, guarantor, committee_id, notes, stance, lending_committee_id
-                            """
-                            
-                            b9_loan_list = [
-                                "", #DB ID
-                                b9_lender_name, #lender name
-                                b9_lender_addr, #lender address
-                                b9_exp_date_test, #loan date
-                                b9_loan_amount, #loan amount
-                                b9_loan_repaid, #amount repaid
-                                b9_loan_forgiven, #amount forgiven
-                                b9_paid_by_third_party, #amount covered by 3rd party
-                                b9_guarantor, #guarantor
-                                b9_committee_id, #committee ID
-                                "", #notes field
-                                b9_loan_stance, #stance field
-                                b9_loan_lending_committee_id, #lending committee ID
-                            ]
-                            loans.write("|".join(b9_loan_list) + "\n")
-                        
-                        # is it an expenditure, then, or
-                        elif b9_contrib_type =="D":
-                            b9_exp_payee = ""
-                            b9_exp_address = ""
-                            b9_exp_purpose = ' '.join((row[20].strip()).split()).replace('"',"")
-                            b9_exp_amount = row[18]
-                            b9_exp_inkind = ""
-                            b9_exp_contributor_id = row[2]
-                            b9_exp_contributor_name = ' '.join((row[0].upper().strip()).split()).replace('"',"")
-                            b9_exp_stance = row[14].strip().upper()
-                            b9_exp_stance = row[14].upper().strip() # (S=Support, O=Oppose)
-                            if b9_exp_stance == "S":
-                                b9_exp_stance = "0"
-                            elif b9_exp_stance == "0":
-                                b9_exp_stance = "1"
-                            else:
-                                b9_exp_stance = ""
-                            
-                            """
-                            DB fields
-                            ========
-                            db_id (""), payee (name, free text), payee_addr, exp_date, exp_purpose, amount, in_kind, committee_id (doing the expending), stance (support/oppose), notes, payee_committee_id (the payee ID, if exists), committee_exp_name (name of the committee doing the expending), raw_target (free text ID of target ID, will get shunted to candidate or committee ID on save), target_candidate_id, target_committee_id
-                            """
-                            
-                            b9_exp_list = [   
-                                "",                              
-                                b9_exp_payee,
-                                b9_exp_address,
-                                b9_exp_date_test,
-                                b9_exp_purpose,
-                                b9_exp_amount,
-                                b9_exp_inkind,
-                                b9_exp_contributor_id, #committee ID doing the expending
-                                b9_exp_stance,
-                                "", #notes
-                                "", #payee ID
-                                b9_exp_contributor_name, #name of committee doing the expending
-                                b9_exp_recipient_id, #raw target committee ID
-                                "\N", #target candidate ID
-                                "", #target committee ID                           
-                            ]
-                            expenditures.write("|".join(b9_exp_list) + "\n")
-                        
-                        #else it's a donation
-                        else:
-                            b9_don_contributor_id = row[2]
-                            b9_don_receiving_id = row[13]
-                            b9_don_contributor_name = ' '.join((row[0].strip().upper()).split()).replace('"',"")
-                            b9_don_stance = row[14].upper().strip() # (S=Support, O=Oppose)
-                            if b9_don_stance == "S":
-                                b9_don_stance = "0"
-                            elif b9_don_stance == "0":
-                                b9_don_stance = "1"
-                            else:
-                                b9_don_stance = ""
-                            
-                            #is it a direct contribution?
-                            if b9_contrib_type =="A":
-                                b9_don_cash = getFloat(str(row[18]))
-                                b9_don_inkind_amount = ""
-                                b9_don_pledge_amount = ""
-                                b9_don_inkind_desc = ""
-                                
-                            #is it an in-kind contribution?
-                            elif b9_contrib_type == "B":
-                                b9_don_inkind_amount = getFloat(str(row[18]))
-                                b9_don_cash = ""
-                                b9_don_pledge_amount = ""
-                                b9_don_inkind_desc = ' '.join((row[20].upper().strip()).split()).replace('"',"")
-                                
-                            #is it a pledge?
-                            elif b9_contrib_type == "E":
-                                b9_don_pledge_amount = getFloat(str(row[18]))
-                                b9_don_cash = ""
-                                b9_don_inkind_amount = ""
-                                b9_don_inkind_desc = ""
-                            
-                            """
-                            DB fields
-                            ========
-                            DB id, cash, inkind, pledge, inkind_desc, donation_date, donor_id, recipient_id, donation_year, notes, stance, donor_name
-                            """
-                            b9_donation_list = [                        
-                                "",
-                                b9_don_cash,
-                                b9_don_inkind_amount,
-                                b9_don_pledge_amount,
-                                b9_don_inkind_desc,
-                                b9_exp_date_test,
-                                b9_don_contributor_id,
-                                b9_don_receiving_id,
-                                b9_year,
-                                "",
-                                b9_don_stance,
-                                b9_don_contributor_name,
-                            ]
-                            donations.write("|".join(b9_donation_list) + "\n")
 
     
     with open('formb11.txt', 'rb') as b11:
@@ -3240,7 +2959,7 @@ def parseErrything():
                             b11_exp_stance = row[15].upper().strip() # (S=Support, O=Oppose)
                             if b11_exp_stance == "S":
                                 b11_exp_stance = "0"
-                            elif b11_exp_stance == "0":
+                            elif b11_exp_stance == "O":
                                 b11_exp_stance = "1"
                             else:
                                 b11_exp_stance = ""
@@ -3249,7 +2968,7 @@ def parseErrything():
                             b11_exp_stance = row[17].upper().strip() # (S=Support, O=Oppose)
                             if b11_exp_stance == "S":
                                 b11_exp_stance = "0"
-                            elif b11_exp_stance == "0":
+                            elif b11_exp_stance == "O":
                                 b11_exp_stance = "1"
                             else:
                                 b11_exp_stance = ""
@@ -3385,8 +3104,8 @@ def parseErrything():
                 
                 #Unpack lookup to replace known bad strings
                 for item in GARBAGE_STRINGS:
-                    name = name.upper().replace(*item).strip()
-                    canonical_name = canonical_name.upper().replace(*item).strip()
+                    name = name.upper().replace(*item).strip().rstrip(",").rstrip(" -")
+                    canonical_name = canonical_name.upper().replace(*item).strip().rstrip(",").rstrip(" -")
                 
                 #check for complete names
                 if len(name) > 1:

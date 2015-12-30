@@ -59,11 +59,11 @@ printf "~~ server restarted ~~\n\n"
 #generate SQL dumps for upload
 printf "~~ baking out SQL files for Dataomaha ~~\n"
 cd ${P}nadc_data/toupload
-mysqldump -u ${FUSSY_USER} -p${FUSSY_PW} django_database nadc_candidate | gzip > candidate.sql.gz
-mysqldump -u ${FUSSY_USER} -p${FUSSY_PW} django_database nadc_loan | gzip > loan.sql.gz
-mysqldump -u ${FUSSY_USER} -p${FUSSY_PW} django_database nadc_donation | gzip > donation.sql.gz
-mysqldump -u ${FUSSY_USER} -p${FUSSY_PW} django_database nadc_entity | gzip > entity.sql.gz
-mysqldump -u ${FUSSY_USER} -p${FUSSY_PW} django_database nadc_expenditure | gzip > expenditure.sql.gz
+mysqldump -u ${FUSER} -p${FPW} django_database nadc_candidate | gzip > candidate.sql.gz
+mysqldump -u ${FUSER} -p${FPW} django_database nadc_loan | gzip > loan.sql.gz
+mysqldump -u ${FUSER} -p${FPW} django_database nadc_donation | gzip > donation.sql.gz
+mysqldump -u ${FUSER} -p${FPW} django_database nadc_entity | gzip > entity.sql.gz
+mysqldump -u ${FUSER} -p${FPW} django_database nadc_expenditure | gzip > expenditure.sql.gz
 printf "~~ baked out SQL files for Dataomaha ~~\n\n"
 
 #upload sql dump + last_updated.py to live server
@@ -73,7 +73,7 @@ fab goLive
 printf "~~ dropped files on Dataomaha ~~\n\n"
 
 #tweet
-printf "~~ tweeting ~~\n"
-printf "~~ tweeted ~~\n\n"
+#printf "~~ tweeting ~~\n"
+#printf "~~ tweeted ~~\n\n"
 
 printf "~~ DONE ~~\n\n"

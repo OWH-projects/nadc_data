@@ -1,0 +1,6 @@
+HOME=/root
+LOGNAME=root
+PATH=/usr/local/heroku/bin:/home/mwynn/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/home/mwynn/.local/bin
+LANG=en_US.UTF-8
+SHELL=/bin/sh
+PWD=/root

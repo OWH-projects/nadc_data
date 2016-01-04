@@ -78,7 +78,9 @@ To get an exhaustive list of ID'd entities, the script slurps up a half-million 
 ##Data excluded
 <ul>
 <li>Pre-1999 records, which the NADC does not consider especially reliable.</li>
+<li>Unpaid pledges, which are recorded as a cash donation if they're actually paid.</li>
+<li>Late expenditures in <code>Form B11</code>, which sometimes show up in other tables but cannot reliably be deduplicated. As of Jan. 4, 2016, the universe of late expenditures contained 475 records spanning more than a decade and totaling $1.35 million.</li>
 <li>The small number of detail records in<code>Form B6CONT</code>, part of a group of cleanup files for expenditures that aren't recorded elsewhere. It is more trouble than it's worth to pull in.</li>
-<li>Out-of-state expenditures and donations listed in forms B9A and B9B, which are problematically duplicated in other tables.</li>
+<li>Out-of-state expenditures and donations listed in <code>Form B9A</code> and <code>Form B9B</a>, which are problematically duplicated in other tables.</li>
 <li>Records associated with candidate committee No. 99CAC00167, Friends of Doug Kristensen, which was related to Mr. Kristensen's candidacy for a delegate slot at the 1996 Republican National Convention. As far as we can tell, this is the only time a candidacy for party conention delegate shows up in the data.</li>
 </ul>

@@ -144,7 +144,6 @@ def parseErrything():
         B72: Direct contributions by corporations, unions and other associations
         B73: Indirect contributions by corporations, unions and other associations
         B9: Out of state expenditures/donations
-        B11: Report of late independent expenditure    
         
     Assumptions:
         A "direct expenditure" or "cash disbursement" to a candidate or registered committee is equivalent to a donation and will be treated as such.
@@ -2085,121 +2084,7 @@ def parseErrything():
                         expenditures.write("|".join(b4b3_exp_list) + "\n")
        
     
-    with open('formb5.txt', 'rb') as b5:
-        """
-        FormB5: Late donations
-
-        Data is added to Entity, Donation
-        
-        COLUMNS
-        =======
-        0: Committee Name
-        1: Committee ID
-        2: Date Received
-        3: Date Last Revised
-        4: Last Revised By
-        5: Postmark Date
-        6: Microfilm Number
-        7: Contributor ID
-        8: Type of Contributor
-        9: Nature of Contribution
-        10: Date of Contribution
-        11: Amount
-        12: Occupation
-        13: Employer
-        14: Place of Business
-        15: Contributor Name
-        """
-        
-        print "    formb5 ..."
-        
-        b5reader = csvkit.reader(b5, delimiter = delim)
-        b5reader.next()
-        
-        for row in b5reader:
-            b5_committee_id = row[1]
-            b5_contributor_id = row[7]
-            
-            if b5_committee_id not in GARBAGE_COMMITTEES:
-                #Append ID to master list
-                id_master_list.append(b5_committee_id)
-                
-                #Add committee to Entity
-                b5_committee_name = ' '.join((row[0].strip().upper()).split()).replace('"',"") #Committee name
-                b5_committee_address = "" #Address
-                b5_committee_city = "" #City
-                b5_committee_state = "" #State
-                b5_committee_zip = "" #ZIP
-                #b5_committee_type = "" #Committee type
-                b5_committee_type = canonFlag(b5_committee_id) # canonical flag
-                b5_entity_date_of_thing_happening = row[2] #Date used to eval recency on dedupe
-
-                """
-                DB fields
-                ========
-                nadcid, name, address, city, state, zip, entity_type, notes, employer, occupation, place_of_business, dissolved_date
-                
-                We're adding b5_entity_date_of_thing_happening so that later we can eval for recency on dedupe.
-                """
-                
-                b5_committee_list = [
-                    b5_committee_id,
-                    b5_committee_name,
-                    b5_committee_address,
-                    b5_committee_city,
-                    b5_committee_state,
-                    b5_committee_zip,
-                    b5_committee_type,
-                    "",
-                    "",
-                    "",
-                    "",
-                    "",
-                    b5_entity_date_of_thing_happening,
-                ]
-                entities.write("|".join(b5_committee_list) + "\n")
-        
-            if b5_contributor_id not in GARBAGE_COMMITTEES:
-                #Append ID to master list
-                id_master_list.append(b5_contributor_id)
-                
-                #Add contributor to Entity
-                b5_contributor_name = ' '.join((row[15].strip().upper()).split()).replace('"',"") #Contributor name
-                b5_contributor_address = "" #Address
-                b5_contributor_city = "" #City
-                b5_contributor_state = "" #State
-                b5_contributor_zip = "" #ZIP
-                #b5_contributor_type = row[8].strip().upper() #Contributor type (B=Business, I=Individual, C=Corporation, M=Candidate committee, P=PAC, Q=Ballot Question Committee, R=Political Party Committee)
-                b5_contributor_type = canonFlag(b5_contributor_id) # canonical flag
-                b5_entity_date_of_thing_happening = row[2] #Date used to eval recency on dedupe
-                b5_contributor_occupation = row[12].strip()
-                b5_contributor_employer = row[13].strip()
-                b5_contributor_place_of_business = row[14].strip()
-
-                """
-                DB fields
-                ========
-                nadcid, name, address, city, state, zip, entity_type, notes, employer, occupation, place_of_business, dissolved_date
-                
-                We're adding b5_entity_date_of_thing_happening so that later we can eval for recency on dedupe.
-                
-                """
-                b5_contributor_list = [
-                    b5_contributor_id,
-                    b5_contributor_name,
-                    b5_contributor_address,
-                    b5_contributor_city,
-                    b5_contributor_state,
-                    b5_contributor_zip,
-                    b5_contributor_type,
-                    "",
-                    b5_contributor_employer,
-                    b5_contributor_occupation,
-                    b5_contributor_place_of_business,
-                    "",
-                    b5_entity_date_of_thing_happening,
-                ]
-                entities.write("|".join(b5_contributor_list) + "\n")
+    
        
     
     #now we do the b6 tables with some fly csvjoin ish
@@ -2845,17 +2730,13 @@ def parseErrything():
                     b9_entity_date_of_thing_happening,
                 ]
                 entities.write("|".join(b9_committee_list) + "\n")
-        
-    
-    
-    
 
     
-    with open('formb11.txt', 'rb') as b11:
+    #with open('formb11.txt', 'rb') as b11:
         """
         FormB11: Report of Late Independent Expenditure
-
-        Data is added to Entity, Expenditure
+        
+        *** 1/4/2016: These are problematically duplicated in other tables, so we've decided not to pull them into the main duder. We need to figure out a way to alert reporters/readers of late expenditures, though -- maybe date test and do an email? A separate table? For now, I'll leave the parsing logic intact but comment it out. ***
         
         COLUMNS
         =======
@@ -2882,6 +2763,7 @@ def parseErrything():
         20: Candidate/Ballot Name
         """
         
+        """
         print "    formb11 ..."
         
         b11reader = csvkit.reader(b11, delimiter = delim)
@@ -2905,15 +2787,16 @@ def parseErrything():
                 #b11_committee_type = ""
                 b11_committee_type = canonFlag(b11_committee_id) # canonical flag
                 b11_entity_date_of_thing_happening = row[4] #Date used to eval recency on dedupe
-                
-                """
+        """
+        """
                 DB fields
                 ========
                 nadcid, name, address, city, state, zip, entity_type, notes, employer, occupation, place_of_business, dissolved_date
                 
                 We're adding b11_entity_date_of_thing_happening so that later we can eval for recency on dedupe.
                 
-                """
+        """
+        """
                 b11_committee_list = [
                     b11_committee_id,
                     b11_committee_name,
@@ -2973,12 +2856,13 @@ def parseErrything():
                             else:
                                 b11_exp_stance = ""
                             b11_exp_target_id = row[16]
-                        
-                        """
+        """                
+        """
                         DB fields
                         =========
                         db_id (""), payee (name, free text), payee_addr, exp_date, exp_purpose, amount, in_kind, committee_id (doing the expending), stance (support/oppose), notes, payee_committee_id (the payee ID, if exists), committee_exp_name (name of the committee doing the expending), raw_target (free text ID of target ID, will get shunted to candidate or committee ID on save), target_candidate_id, target_committee_id
-                        """
+        """
+        """
                         b11_exp_list = [  
                             "",                        
                             b11_exp_payee,
@@ -2997,7 +2881,7 @@ def parseErrything():
                             "", #target committee ID                      
                         ]
                         expenditures.write("|".join(b11_exp_list) + "\n")
-                
+        """
             
     entities.close()
     candidates.close()

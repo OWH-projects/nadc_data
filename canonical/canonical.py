@@ -812,6 +812,7 @@ GARBAGE_STRINGS = [
     ("NE STATE AFL - CIO", "NE STATE AFL-CIO"),
     ("(NR)", ""),
     ("&#39;","'"),
+    (",  PAC","PAC"),
     ("&AMP;","&"),
     ("&QUOT;","'"),
     (", INC.", ""),
@@ -859,7 +860,8 @@ GARBAGE_STRINGS = [
     ("(DISS",""),
     ("(DIS",""),
     ("(DI",""),
-    ("(D",""),    
+    ("(D",""),
+    ("  "," "),
 ]
 
 STANDARD_CANDIDATES = [

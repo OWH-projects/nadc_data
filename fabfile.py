@@ -55,7 +55,7 @@ def getFloat(i):
     if not i or i == "":
         return "0.0"
     else:
-        return i
+        return str(float(i))
 
 
 def lookItUp(input, param, namefield):
@@ -1299,9 +1299,9 @@ def parseErrything():
                         #if direct expenditure, treat as donation
                         if row[4].upper().strip() == "D":
                             b2b_cash = getFloat(str(row[6])) #cash                        
-                            b2b_inkind_amount = ""
-                            b2b_pledge_amount = ""
-                            b2b_inkind_desc = ""
+                            b2b_inkind_amount = "0.0"
+                            b2b_pledge_amount = "0.0"
+                            b2b_inkind_desc = "0.0"
                             
                             """
                             DB fields
@@ -1319,7 +1319,7 @@ def parseErrything():
                                 b2b_target_id,
                                 b2b_year,
                                 "",
-                                b2b_stance,
+                                "",
                                 "",
                             ]
                             donations.write("|".join(b2b_donation_list) + "\n")
@@ -1753,10 +1753,10 @@ def parseErrything():
                             b4b1_lender_name = ' '.join((row[9].strip().upper()).split()).replace('"',"") #lending committee name
                             b4b1_lender_addr = ""
                             b4b1_loan_amount = row[7]
-                            b4b1_loan_repaid = 0.00
+                            b4b1_loan_repaid = "0.0"
                             b4b1_loan_stance = row[4].strip() #0=Support, 1=Oppose
-                            b4b1_loan_forgiven = 0.00
-                            b4b1_paid_by_third_party = 0.00
+                            b4b1_loan_forgiven = "0.0"
+                            b4b1_paid_by_third_party = "0.0"
                             b4b1_guarantor = ""
                             b4b1_committee_id = row[3] # committee receiving the loan
                             b4b1_lending_committee_id = b4b1_target_id #lending committee ID
@@ -1787,8 +1787,8 @@ def parseErrything():
                         # Is it a direct expenditure, i.e. a donation?
                         elif b4b1_transaction_type == "D":
                             b4b1_cash = getFloat(str(row[7])) #cash                        
-                            b4b1_inkind_amount = ""
-                            b4b1_pledge_amount = ""
+                            b4b1_inkind_amount = "0.0"
+                            b4b1_pledge_amount = "0.0"
                             b4b1_inkind_desc = ""
                             b4b1_don_stance = row[4].strip() #0=Support, 1=Oppose
                             
@@ -1808,7 +1808,7 @@ def parseErrything():
                                 b4b1_target_id,
                                 b4b1_year,
                                 "",
-                                b4b1_don_stance,
+                                "",
                                 "",
                             ]
                             donations.write("|".join(b4b1_donation_list) + "\n")
@@ -1824,9 +1824,9 @@ def parseErrything():
                             #was it an in-kind expenditure?
                             if b4b1_transaction_type.strip().upper() == "I":
                                 b4b1_exp_inkind = row[7]
-                                b4b1_exp_amount = "0.00"
+                                b4b1_exp_amount = "0.0"
                             else:
-                                b4b1_exp_inkind = "0.00"
+                                b4b1_exp_inkind = "0.0"
                                 b4b1_exp_amount = row[7]
                             
                             """
@@ -1939,8 +1939,8 @@ def parseErrything():
                     if int(b4b2_year) >= 1999:
                         #Add to Donation
                         b4b2_cash = getFloat(str(row[4])) #cash                        
-                        b4b2_inkind_amount = ""
-                        b4b2_pledge_amount = ""
+                        b4b2_inkind_amount = "0.0"
+                        b4b2_pledge_amount = "0.0"
                         b4b2_inkind_desc = "" #in-kind description
                         b4b2_donor_name = ' '.join((row[0].strip().upper()).split()).replace('"',"")
                         
@@ -1959,7 +1959,7 @@ def parseErrything():
                             b4b2_committee_id,
                             "",
                             b4b2_year,
-                            "",
+                            "Unspecified out-of-state or federal contribution",
                             "",
                             b4b2_donor_name,
                         ]
@@ -2083,9 +2083,221 @@ def parseErrything():
                         ]
                         expenditures.write("|".join(b4b3_exp_list) + "\n")
        
+    with open('formb5.txt', 'rb') as b5:
+        """
+        FormB5: Late donations
+
+        Data is added to Entity, Donation, Loan
+        
+        If a late donation record doesn't have anything that signifies the type of contribution (i.e., the "Nature of Contribution" field is blank), we call it money.
+        
+        COLUMNS
+        =======
+        0: Committee Name
+        1: Committee ID
+        2: Date Received
+        3: Date Last Revised
+        4: Last Revised By
+        5: Postmark Date
+        6: Microfilm Number
+        7: Contributor ID
+        8: Type of Contributor
+        9: Nature of Contribution
+        10: Date of Contribution
+        11: Amount
+        12: Occupation
+        13: Employer
+        14: Place of Business
+        15: Contributor Name
+        """
+        
+        print "    formb5 ..."
+        
+        b5reader = csvkit.reader(b5, delimiter = delim)
+        b5reader.next()
+        
+        for row in b5reader:
+            b5_committee_id = row[1]
+            b5_contributor_id = row[7]
+            
+            if b5_committee_id not in GARBAGE_COMMITTEES:
+                #Append ID to master list
+                id_master_list.append(b5_committee_id)
+                
+                #Add committee to Entity
+                b5_committee_name = ' '.join((row[0].strip().upper()).split()).replace('"',"") #Committee name
+                b5_committee_address = "" #Address
+                b5_committee_city = "" #City
+                b5_committee_state = "" #State
+                b5_committee_zip = "" #ZIP
+                #b5_committee_type = "" #Committee type
+                b5_committee_type = canonFlag(b5_committee_id) # canonical flag
+                b5_entity_date_of_thing_happening = row[2] #Date used to eval recency on dedupe
+
+                """
+                DB fields
+                ========
+                nadcid, name, address, city, state, zip, entity_type, notes, employer, occupation, place_of_business, dissolved_date
+                
+                We're adding b5_entity_date_of_thing_happening so that later we can eval for recency on dedupe.
+                """
+                
+                b5_committee_list = [
+                    b5_committee_id,
+                    b5_committee_name,
+                    b5_committee_address,
+                    b5_committee_city,
+                    b5_committee_state,
+                    b5_committee_zip,
+                    b5_committee_type,
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    b5_entity_date_of_thing_happening,
+                ]
+                entities.write("|".join(b5_committee_list) + "\n")
+        
+            if b5_contributor_id not in GARBAGE_COMMITTEES:
+                #Append ID to master list
+                id_master_list.append(b5_contributor_id)
+                
+                #Add contributor to Entity
+                b5_contributor_name = ' '.join((row[15].strip().upper()).split()).replace('"',"") #Contributor name
+                b5_contributor_address = "" #Address
+                b5_contributor_city = "" #City
+                b5_contributor_state = "" #State
+                b5_contributor_zip = "" #ZIP
+                #b5_contributor_type = row[8].strip().upper() #Contributor type (B=Business, I=Individual, C=Corporation, M=Candidate committee, P=PAC, Q=Ballot Question Committee, R=Political Party Committee)
+                b5_contributor_type = canonFlag(b5_contributor_id) # canonical flag
+                b5_entity_date_of_thing_happening = row[2] #Date used to eval recency on dedupe
+                b5_contributor_occupation = row[12].strip()
+                b5_contributor_employer = row[13].strip()
+                b5_contributor_place_of_business = row[14].strip()
+
+                """
+                DB fields
+                ========
+                nadcid, name, address, city, state, zip, entity_type, notes, employer, occupation, place_of_business, dissolved_date
+                
+                We're adding b5_entity_date_of_thing_happening so that later we can eval for recency on dedupe.
+                
+                """
+                b5_contributor_list = [
+                    b5_contributor_id,
+                    b5_contributor_name,
+                    b5_contributor_address,
+                    b5_contributor_city,
+                    b5_contributor_state,
+                    b5_contributor_zip,
+                    b5_contributor_type,
+                    "",
+                    b5_contributor_employer,
+                    b5_contributor_occupation,
+                    b5_contributor_place_of_business,
+                    "",
+                    b5_entity_date_of_thing_happening,
+                ]
+                entities.write("|".join(b5_contributor_list) + "\n")
+                
+            if b5_committee_id not in GARBAGE_COMMITTEES and b5_contributor_id not in GARBAGE_COMMITTEES:
+                #datetest
+                b5_donation_date = row[10]
+                b5_date_test = validDate(b5_donation_date)
+                if b5_date_test == "broke":
+                    b5_dict = {}
+                    b5_dict["donor_id"] = row[7]
+                    b5_dict["recipient_id"] = row[1]
+                    b5_dict["lookup_name"] = ' '.join((row[0].upper().strip()).split()).replace('"',"")
+                    b5_dict["source_table"] = "b5"
+                    b5_dict["destination_table"] = "donation_or_loan"
+                    b5_dict["donation_date"] = b5_donation_date
+                    rows_with_new_bad_dates.append(b5_dict)
+                else:
+                    b5_year = b5_date_test.split("-")[0]
+                    if int(b5_year) >= 1999:
+                        b5_type_of_contrib = row[9].strip().upper()
+                        
+                        # is it a loan?
+                        if b5_type_of_contrib == "L":
+                            #womp into loans
+                            
+                            b5_lender_name = ' '.join((row[15].strip().upper()).split()).replace('"',"")
+                            b5_lender_addr = ""
+                            b5_loan_amount = getFloat(str(row[11]))
+                            b5_loan_repaid = "0.0"
+                            b5_loan_forgiven = "0.0"
+                            b5_paid_by_third_party = ""
+                            b5_guarantor = ""
+                            
+                            """
+                            DB fields
+                            ========
+                            db_id, lender_name, lender_addr, loan_date, loan_amount, loan_repaid, loan_forgiven, paid_by_third_party, guarantor, committee_id, notes, stance, lending_committee_id
+                            """
+                            
+                            b5_loan_list = [
+                                "", #DB ID
+                                b5_lender_name, #lender name
+                                b5_lender_addr, #lender address
+                                b5_date_test, #loan date
+                                b5_loan_amount, #loan amount
+                                b5_loan_repaid, #amount repaid
+                                b5_loan_forgiven, #amount forgiven
+                                b5_paid_by_third_party, #amount covered by 3rd party
+                                b5_guarantor, #guarantor
+                                b5_committee_id, #committee ID
+                                "", #notes field
+                                "", #stance field
+                                b5_contributor_id, #lending committee ID
+                            ]
+                            loans.write("|".join(b5_loan_list) + "\n")
+                        else:
+                            pass
+                            # womp into donations
+                            
+                            if b5_type_of_contrib == "M":                                
+                                b5_cash = getFloat(str(row[11])) #cash
+                                b5_inkind_amount = "0.0" #inkind
+                                b5_pledge_amount = "0.0" #pledge
+                            elif b5_type_of_contrib == "I":
+                                b5_cash = "0.0" #cash
+                                b5_inkind_amount = getFloat(str(row[11])) #inkind
+                                b5_pledge_amount = "0.0" #pledge
+                            elif b5_type_of_contrib == "P":
+                                b5_cash = "0.0" #cash
+                                b5_inkind_amount = "0.0" #inkind
+                                b5_pledge_amount = getFloat(str(row[11])) #pledge
+                            else:
+                                b5_cash = getFloat(str(row[11])) #cash
+                                b5_inkind_amount = "0.0" #inkind
+                                b5_pledge_amount = "0.0" #pledge
+                            
+                            b5_inkind_desc = "" #in-kind description
+                            b5_donor_name = ' '.join((row[15].strip().upper()).split()).replace('"',"")
+                        
+                            """
+                            DB fields
+                            =========
+                            db_id, cash, inkind, pledge, inkind_desc, donation_date, donor_id, recipient_id, donation_year, notes, stance, donor_name
+                            """
+                            b5_donation_list = [                        
+                                "",
+                                b5_cash,
+                                b5_inkind_amount,
+                                b5_pledge_amount,
+                                b5_inkind_desc,
+                                b5_date_test,
+                                b5_contributor_id,
+                                b5_committee_id,
+                                b5_year,
+                                "",
+                                "",
+                                b5_donor_name,
+                            ]
+                            donations.write("|".join(b5_donation_list) + "\n")
     
-    
-       
     
     #now we do the b6 tables with some fly csvjoin ish
     
@@ -2470,8 +2682,8 @@ def parseErrything():
                     b72_year = b72_date_test.split("-")[0]
                     if int(b72_year) >= 1999:
                         b72_cash = getFloat(str(row[5])) #cash                        
-                        b72_inkind_amount = "" #inkind
-                        b72_pledge_amount = "" #pledge
+                        b72_inkind_amount = "0.0" #inkind
+                        b72_pledge_amount = "0.0" #pledge
                         b72_inkind_desc = "" #in-kind description
                         
                         """

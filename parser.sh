@@ -33,7 +33,7 @@ printf "~~ fixed the date format ~~\n\n"
 #main script that parses raw data into tables for upload
 printf "~~ doing all the things ~~\n"
 fab parseErrything
-printf "~~ did all the things ~~\n\n"
+#printf "~~ did all the things ~~\n\n"
 
 #pick up after yourself
 printf "~~ cleaning up ~~\n"

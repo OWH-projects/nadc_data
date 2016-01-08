@@ -14,6 +14,14 @@ import requests
 
 fabric.state.output.status = False
 
+
+def weekGetter(donationdate):
+    '''
+    Return the number of the week for kludgy dedupe process targeting donations in same week.
+    '''
+    dateasdate = datetime.datetime.strptime(donationdate, '%Y-%m-%d')
+    return str(dateasdate.isocalendar()[1])
+
 def getConfig():
     """
     Cache list of config values.
@@ -120,6 +128,7 @@ def parseErrything():
         toupload/loan.txt
         toupload/expenditure.txt
         toupload/ballot.txt
+        toupload/misc.txt
     
     Forms we care about:
         A1: Most committees
@@ -158,6 +167,7 @@ def parseErrything():
     donations = open(THISPATH + "nadc_data/toupload/donations-raw.txt", "wb")
     loans = open(THISPATH + "nadc_data/toupload/loan.txt", "wb")
     expenditures = open(THISPATH + "nadc_data/toupload/expenditure.txt", "wb")
+    misc = open(THISPATH + "nadc_data/toupload/misc.txt", "wb")
     
     #write headers to files that get deduped by pandas or whatever
     donations_headers = [
@@ -244,7 +254,10 @@ def parseErrything():
                 id_master_list.append(a1_entity_id)
                 
                 #Add to Entity
-                a1_entity_name = ' '.join((row[1].upper().strip()).split()).replace('"',"") #Committee name
+                a1_entity_name = ' '.join((row[1].upper().strip()).split()).replace('"',"")
+                a1_entity_notes = ""
+
+                #Committee name
                 a1_address = row[2] #Address
                 a1_city = row[3] #City
                 a1_state = row[4] #State
@@ -270,7 +283,7 @@ def parseErrything():
                     a1_state.upper(),
                     a1_zip,
                     a1_entity_type,
-                    "",
+                    a1_entity_notes,
                     "",
                     "",
                     "",
@@ -746,7 +759,7 @@ def parseErrything():
                             b1ab_committee_id,
                             b1ab_year,
                             "",
-                            "",
+                            weekGetter(b1ab_date_test),
                             "",
                         ]
                         donations.write("|".join(b1ab_donation_list) + "\n")
@@ -1319,10 +1332,10 @@ def parseErrything():
                                 b2b_target_id,
                                 b2b_year,
                                 "",
-                                "",
+                                weekGetter(b2b_exp_date_test),
                                 "",
                             ]
-                            donations.write("|".join(b2b_donation_list) + "\n")
+                            #donations.write("|".join(b2b_donation_list) + "\n")
                         
                         #else it's a true expenditure
                         else:
@@ -1612,10 +1625,10 @@ def parseErrything():
                             b4a_committee_id,
                             b4a_year,
                             "",
-                            "",
+                            weekGetter(b4a_date_test),
                             "",
                         ]
-                        donations.write("|".join(b4a_donation_list) + "\n")
+                        #donations.write("|".join(b4a_donation_list) + "\n")
       
       
     with open('formb4b1.txt', 'rb') as b4b1:
@@ -1808,10 +1821,10 @@ def parseErrything():
                                 b4b1_target_id,
                                 b4b1_year,
                                 "",
-                                "",
+                                weekGetter(b4b1_date_test),
                                 "",
                             ]
-                            donations.write("|".join(b4b1_donation_list) + "\n")
+                            #donations.write("|".join(b4b1_donation_list) + "\n")
                         
                         #Or is it a true expenditure?
                         else:
@@ -1960,10 +1973,10 @@ def parseErrything():
                             "",
                             b4b2_year,
                             "Unspecified out-of-state or federal contribution",
-                            "",
+                            weekGetter(b4b2_date_test),
                             b4b2_donor_name,
                         ]
-                        donations.write("|".join(b4b2_donation_list) + "\n")
+                        #donations.write("|".join(b4b2_donation_list) + "\n")
                 
                 
     with open('formb4b3.txt', 'rb') as b4b3:
@@ -2293,10 +2306,10 @@ def parseErrything():
                                 b5_committee_id,
                                 b5_year,
                                 "",
-                                "",
+                                weekGetter(b5_date_test),
                                 b5_donor_name,
                             ]
-                            donations.write("|".join(b5_donation_list) + "\n")
+                            #donations.write("|".join(b5_donation_list) + "\n")
     
     
     #now we do the b6 tables with some fly csvjoin ish
@@ -2667,7 +2680,7 @@ def parseErrything():
             #womp into Donation                
             if b72_committee_id not in GARBAGE_COMMITTEES and b72_contributor_id not in GARBAGE_COMMITTEES:
                 #datetest
-                b72_donation_date = row[4]
+                b72_donation_date = row[2] #this is actually date received, not donation date, let's see what breaks
                 b72_date_test = validDate(b72_donation_date)
                 if b72_date_test == "broke":
                     b72_dict = {}
@@ -2702,10 +2715,10 @@ def parseErrything():
                             b72_committee_id,
                             b72_year,
                             "",
-                            "",
+                            weekGetter(b72_date_test),
                             " ".join((row[0].strip().upper()).split()).replace('"',""),
                         ]
-                        donations.write("|".join(b72_donation_list) + "\n")
+                        #donations.write("|".join(b72_donation_list) + "\n")
     
     
     with open('formb73.txt', 'rb') as b73:
@@ -3094,12 +3107,113 @@ def parseErrything():
                         ]
                         expenditures.write("|".join(b11_exp_list) + "\n")
         """
+    
+    with open('forma1misc.txt', 'rb') as a1misc:
+        """
+        FormA1misc: Miscellaneous peeps connected to a committee
+
+        Data is added to Entity, Misc
+        
+        COLUMNS
+        =======
+        0: Form A1 ID Number
+        1: Date Received
+        2: Name
+        3: Address
+        4: Phone
+        5: Type of Individual
+        """
+        
+        print "    forma1misc ..."
+        
+        a1miscreader = csvkit.reader(a1misc, delimiter=delim)
+        a1miscreader.next()
+         
+        for row in a1miscreader:
+            a1misc_committee_id = row[0]
+    
+            if a1misc_committee_id not in GARBAGE_COMMITTEES:
+                #Append ID to master list
+                id_master_list.append(a1misc_committee_id)
+                #Add committee to Entity
+                a1misc_committee_name = "" #Committee name
+                a1misc_committee_address = "" #Address
+                a1misc_committee_city = "" #City
+                a1misc_committee_state = "" #State
+                a1misc_committee_zip = "" #ZIP
+                #a1misc_committee_type = row[6].upper().strip() #committee type (C=Corporation, L=Labor Organization, I=Industry or Trade Organization, P=Professional Association)
+                a1misc_committee_type = canonFlag(a1misc_committee_id) # canonical flag
+                a1misc_entity_date_of_thing_happening = row[1] #Date used to eval recency on dedupe
+                
+                """
+                DB fields
+                ========
+                nadcid, name, address, city, state, zip, entity_type, notes, employer, occupation, place_of_business, dissolved_date
+                
+                We're adding a1misc_entity_date_of_thing_happening so that later we can eval for recency on dedupe.
+                """
+                
+                a1misc_committee_list = [
+                    a1misc_committee_id,
+                    a1misc_committee_name,
+                    a1misc_committee_address,
+                    a1misc_committee_city,
+                    a1misc_committee_state,
+                    a1misc_committee_zip,
+                    a1misc_committee_type,
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    a1misc_entity_date_of_thing_happening,
+                ]
+                entities.write("|".join(a1misc_committee_list) + "\n")
             
+                #womp into misc table
+                misc_lookup = {
+                    "A": "Assistant treasurer",
+                    "C": "Controlling individual",
+                    "O": "Organized committee",
+                    "P": "Primary account",
+                    "S": "Secondary account",
+                    "T": "Treasurer"
+                }
+                
+                a1misc_name = ' '.join((row[2].strip().upper()).split()).replace('"',"") # name
+                a1misc_address = ' '.join((row[3].strip().upper()).split()).replace('"',"") # address
+                a1misc_phone = ' '.join((row[4].strip().upper()).split()).replace('"',"") # phone
+                a1misc_type_letter = ' '.join((row[5].strip().upper()).split()).replace('"',"") # type
+                
+                try:
+                    a1misc_type = misc_lookup[a1misc_type_letter]
+                except:
+                    a1misc_type = ""
+                
+                """
+                DB fields
+                ========
+                db_id, misc_name, misc_title, misc_address, misc_phone, notes, committee_id
+                """
+                
+                a1misc_list = [
+                    "",
+                    a1misc_name,
+                    a1misc_type,
+                    a1misc_address,
+                    a1misc_phone,
+                    "",
+                    a1misc_committee_id
+                ]
+                
+                misc.write("|".join(a1misc_list) + "\n")            
+
     entities.close()
     candidates.close()
     donations.close()
     loans.close()
     expenditures.close()
+    misc.close()
     
     #check for new bad dates
     if len(rows_with_new_bad_dates) > 0:
@@ -3120,9 +3234,10 @@ def parseErrything():
     - loop over unique entity IDs (having taken the set of id_master_list)
     - grep for each ID in the sorted entity file (~1 million times faster than python)
     - loop over the results, compiling a dict with the most recent, non-empty values, if available
-    - in the process, kill out variants of "(DISSOLVED)"
+    - in the process, kill out variants of "(DISSOLVED)" and other garbage strings
     - punch that record into a list
     - write that list to file
+    - make one more pass to handle the handful of remaining entities that don't have a name
     """
     
     print "\n\nPREPPING ENTITY FILE"
@@ -3163,101 +3278,126 @@ def parseErrything():
     #get most current, complete data
     print "   grepping pre-duped, sorted file and deduping for recency and completeness ..."
     
-    entity_final = open(THISPATH + "nadc_data/toupload/entity.txt", "wb")
-    
-    for idx, i in enumerate(uniques):
-        #print str(idx)
-        with hide('running', 'stdout', 'stderr'):
-            grepstring = local('grep "' + i + '" ' + THISPATH + 'nadc_data/toupload/entities_sorted_and_deduped.txt', capture=True)
-            g = grepstring.split("\n") #list of records that match
-            interimdict = {}
-            
-            #set default values
-            interimdict['id'] = ""
-            interimdict['canonical_id'] = ""
-            interimdict['name'] = ""
-            interimdict['canon_name'] = ""
-            interimdict['address'] = ""
-            interimdict['city'] = ""
-            interimdict['state'] = ""
-            interimdict['zip'] = ""
-            interimdict['entity_type'] = ""
-            interimdict['employer'] = ""
-            interimdict['occupation'] = ""
-            interimdict['place_of_business'] = ""
-            interimdict['dissolved_date'] = ""
-            
-            for dude in g:
-                row = dude.split("|") #actual record
+    with open(THISPATH + "nadc_data/toupload/entity-almost-final-for-real.txt", "wb") as entity_almost_final:
+        for idx, i in enumerate(uniques):
+            #print str(idx)
+            with hide('running', 'stdout', 'stderr'):
+                grepstring = local('grep "' + i + '" ' + THISPATH + 'nadc_data/toupload/entities_sorted_and_deduped.txt', capture=True)
+                g = grepstring.split("\n") #list of records that match
+                interimdict = {}
                 
-                nadcid = row[1]
-                name = row[2]
-                canonical_id = lookItUp(nadcid, "canonicalid", name)
-                canonical_name = lookItUp(nadcid, "canonicalname", name)
+                #set default values
+                interimdict['id'] = ""
+                interimdict['canonical_id'] = ""
+                interimdict['name'] = ""
+                interimdict['canon_name'] = ""
+                interimdict['address'] = ""
+                interimdict['city'] = ""
+                interimdict['state'] = ""
+                interimdict['zip'] = ""
+                interimdict['entity_type'] = ""
+                interimdict['employer'] = ""
+                interimdict['occupation'] = ""
+                interimdict['place_of_business'] = ""
+                interimdict['dissolved_date'] = ""
                 
-                interimdict['id'] = nadcid
-                interimdict['canonical_id'] = canonical_id
-                
-                #Unpack lookup to replace known bad strings
-                for item in GARBAGE_STRINGS:
-                    name = name.upper().replace(*item).strip().rstrip(",").rstrip(" -")
-                    canonical_name = canonical_name.upper().replace(*item).strip().rstrip(",").rstrip(" -")
-                
-                #check for complete names
-                if len(name) > 1:
-                    interimdict['name'] = name
-                if len(canonical_name) > 1:
-                    interimdict['canon_name'] = canonical_name
-                
-                #check for complete address
-                if len(row[3]) > 1 and len(row[4]) > 1 and len(row[5]) > 1 and len(row[6]) > 1:
-                    interimdict['address'] = row[3]
-                    interimdict['city'] = row[4]
-                    interimdict['state'] = row[5]
-                    interimdict['zip'] = row[6]
-
-                #check for complete entity type
-                if len(row[7]) >= 1:
-                    interimdict['entity_type'] = row[7]
-
-                #check for complete employer
-                if len(row[9]) > 1:
-                    interimdict['employer'] = row[9]
+                for dude in g:
+                    row = dude.split("|") #actual record
                     
-                #check for complete occupation
-                if len(row[10]) > 1:
-                    interimdict['occupation'] = row[10]
+                    nadcid = row[1]
+                    name = row[2]
+                    canonical_id = lookItUp(nadcid, "canonicalid", name)
+                    canonical_name = lookItUp(nadcid, "canonicalname", name)
                     
-                #check for complete place of business
-                if len(row[11]) > 1:
-                    interimdict['place_of_business'] = row[11]
-                
-                #check for complete dissolved date
-                if len(row[12]) > 1:
-                    interimdict['dissolved_date'] = row[12]
+                    interimdict['id'] = nadcid
+                    interimdict['canonical_id'] = canonical_id
+                    
+                    #Unpack lookup to replace known bad strings
+                    for item in GARBAGE_STRINGS:
+                        name = name.upper().replace(*item).strip().rstrip(",").rstrip(" -")
+                        canonical_name = canonical_name.upper().replace(*item).strip().rstrip(",").rstrip(" -")
+                    
+                    #check for complete names
+                    if len(name) > 1:
+                        interimdict['name'] = name
+                    if len(canonical_name) > 1:
+                        interimdict['canon_name'] = canonical_name
+                    
+                    #check for complete address
+                    if len(row[3]) > 1 and len(row[4]) > 1 and len(row[5]) > 1 and len(row[6]) > 1:
+                        interimdict['address'] = row[3]
+                        interimdict['city'] = row[4]
+                        interimdict['state'] = row[5]
+                        interimdict['zip'] = row[6]
 
-            #append dict items to list
-            outlist = [
-                interimdict['id'],
-                interimdict['canonical_id'],
-                interimdict['name'],
-                interimdict['canon_name'],
-                interimdict['address'],
-                interimdict['city'],
-                interimdict['state'],
-                interimdict['zip'],
-                interimdict['entity_type'],
-                "",
-                interimdict['employer'],
-                interimdict['occupation'],
-                interimdict['place_of_business'],
-                interimdict['dissolved_date']
-            ]
+                    #check for complete entity type
+                    if len(row[7]) >= 1:
+                        interimdict['entity_type'] = row[7]
+
+                    #check for complete employer
+                    if len(row[9]) > 1:
+                        interimdict['employer'] = row[9]
+                        
+                    #check for complete occupation
+                    if len(row[10]) > 1:
+                        interimdict['occupation'] = row[10]
+                        
+                    #check for complete place of business
+                    if len(row[11]) > 1:
+                        interimdict['place_of_business'] = row[11]
+                    
+                    #check for complete dissolved date
+                    if len(row[12]) > 1:
+                        interimdict['dissolved_date'] = row[12]
+
+                #append dict items to list
+                outlist = [
+                    interimdict['id'],
+                    interimdict['canonical_id'],
+                    interimdict['name'],
+                    interimdict['canon_name'],
+                    interimdict['address'],
+                    interimdict['city'],
+                    interimdict['state'],
+                    interimdict['zip'],
+                    interimdict['entity_type'],
+                    "",
+                    interimdict['employer'],
+                    interimdict['occupation'],
+                    interimdict['place_of_business'],
+                    interimdict['dissolved_date']
+                ]
+                
+                entity_almost_final.write("|".join(outlist) + "\n")
+                
+    #handling stray bastards with no names
+    print "   handling entities with no name ..."
+    
+    with open(THISPATH + "nadc_data/toupload/entity-almost-final-for-real.txt", "rb") as readin, open(THISPATH + "nadc_data/toupload/entity.txt", "wb") as readout:
+        reader = csvkit.reader(readin, delimiter=delim)
+        for row in reader:
+            nadc_id = row[0]
+            canonical_id = row[1]
+            name = row[2]
+            canonical_name = row[3]
+            address = row[4]
+            city = row[5]
+            state = row[6]
+            zip = row[7]
+            entity_type = row[8]
+            notes = row[9]
+            employer = row[10]
+            occupation = row[11]
+            biz = row[12]
+            dissolved_date = row[13]
+            if not name or name == "":
+                name = "Name missing"
+                canonical_name = "Name missing"
+                notes = "Identifying information for several dozen committees and other entities, including this one, have been \"lost in digital space,\" according to the NADC."
             
-            entity_final.write("|".join(outlist) + "\n")
-    
-    entity_final.close()
-    
+            outlist = [nadc_id, canonical_id, name, canonical_name, address, city, state, zip, entity_type, notes, employer, occupation, biz, dissolved_date, ""]
+            
+            readout.write("|".join(outlist) + "\n")    
     
     """
     Dedupe donations file
@@ -3281,24 +3421,21 @@ def parseErrything():
         "recipient_id": object,
         "donation_year": object,
         "notes": object,
-        "stance": object,
+        "stance": object, #really sorry everyone
         "donor_name": object
         }
     )
-    deduped_donations = clean_donations.drop_duplicates(subset=["donor_id", "donation_date", "recipient_id", "cash", "inkind", "pledge"])
+    deduped_donations = clean_donations.drop_duplicates(subset=["donor_id", "donation_year", "stance", "recipient_id", "cash", "inkind", "pledge"])
     deduped_donations.to_csv(THISPATH + 'nadc_data/toupload/donations_almost_there.txt', sep="|")
     with hide('running', 'stdout', 'stderr'):
         local('csvcut -x -d "|" -c db_id,cash,inkind,pledge,inkind_desc,donation_date,donor_id,recipient_id,donation_year,notes,stance,donor_name ' + THISPATH + 'nadc_data/toupload/donations_almost_there.txt | csvformat -D "|" | sed -e \'1d\' -e \'s/\"//g\' > ' + THISPATH + 'nadc_data/toupload/donations.txt', capture=False)
     
     print "\n\nDONE."
 
-
     
 @hosts('dataomaha.com')    
 def goLive():
-    """
-    Upload last_updated.py to live server, load SQL dumps into Dataomaha database
-    """
+    """Upload last_updated.py to live server, load SQL dumps into DO database"""
     
     env.user = configlist[2]
     env.password = configlist[3]

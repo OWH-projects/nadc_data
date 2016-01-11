@@ -37,11 +37,12 @@ fab parseErrything
 
 #pick up after yourself
 printf "~~ cleaning up ~~\n"
-cd ${P}nadc_data/toupload/ && rm donations-raw.txt entity-raw.txt donations_almost_there.txt entities_sorted_and_deduped.txt entities_deduped.txt
+cd ${P}nadc_data/toupload/ && rm donations-raw.txt entity-raw.txt donations_almost_there.txt entities_sorted_and_deduped.txt entities_deduped.txt entity-almost-final-for-real.txt
 printf "~~ cleaned up ~~\n\n"
 
 # kill 'n' fill data locally
 printf "~~ killing and filling new data ~~\n"
+
 mysql --local-infile -u ${FUSER} -p${FPW} -e "SET foreign_key_checks = 0; DELETE FROM django_database.nadc_donation; DELETE FROM django_database.nadc_misc; DELETE FROM django_database.nadc_candidate; DELETE FROM django_database.nadc_loan; DELETE FROM django_database.nadc_expenditure; DELETE FROM django_database.nadc_entity; LOAD DATA LOCAL INFILE '${P}nadc_data/toupload/entity.txt' INTO TABLE django_database.nadc_entity FIELDS TERMINATED BY '|'; LOAD DATA LOCAL INFILE '${P}nadc_data/toupload/donations.txt' INTO TABLE django_database.nadc_donation FIELDS TERMINATED BY '|'; LOAD DATA LOCAL INFILE '${P}nadc_data/toupload/candidate.txt' INTO TABLE django_database.nadc_candidate FIELDS TERMINATED BY '|'; LOAD DATA LOCAL INFILE '${P}nadc_data/toupload/loan.txt' INTO TABLE django_database.nadc_loan FIELDS TERMINATED BY '|'; LOAD DATA LOCAL INFILE '${P}nadc_data/toupload/expenditure.txt' INTO TABLE django_database.nadc_expenditure FIELDS TERMINATED BY '|'; LOAD DATA LOCAL INFILE '${P}nadc_data/toupload/misc.txt' INTO TABLE django_database.nadc_misc FIELDS TERMINATED BY '|'; SET foreign_key_checks = 1;"
 printf "~~ killed and filled new data ~~\n\n"
 
@@ -59,12 +60,13 @@ printf "~~ server restarted ~~\n\n"
 #generate SQL dumps for upload
 printf "~~ baking out SQL files for Dataomaha ~~\n"
 cd ${P}nadc_data/toupload
-mysqldump -u ${FUSER} -p${FPW} django_database nadc_candidate | gzip > candidate.sql.gz
-mysqldump -u ${FUSER} -p${FPW} django_database nadc_loan | gzip > loan.sql.gz
-mysqldump -u ${FUSER} -p${FPW} django_database nadc_donation | gzip > donation.sql.gz
-mysqldump -u ${FUSER} -p${FPW} django_database nadc_misc | gzip > misc.sql.gz
-mysqldump -u ${FUSER} -p${FPW} django_database nadc_entity | gzip > entity.sql.gz
-mysqldump -u ${FUSER} -p${FPW} django_database nadc_expenditure | gzip > expenditure.sql.gz
+
+mysqldump -u ${FUSER} -p${FPW} django_database nadc_candidate | sed 's/ AUTO_INCREMENT=[0-9]*\b//' | gzip > candidate.sql.gz
+mysqldump -u ${FUSER} -p${FPW} django_database nadc_loan | sed 's/ AUTO_INCREMENT=[0-9]*\b//' | gzip > loan.sql.gz
+mysqldump -u ${FUSER} -p${FPW} django_database nadc_donation | sed 's/ AUTO_INCREMENT=[0-9]*\b//' | gzip > donation.sql.gz
+mysqldump -u ${FUSER} -p${FPW} django_database nadc_misc | sed 's/ AUTO_INCREMENT=[0-9]*\b//' | gzip > misc.sql.gz
+mysqldump -u ${FUSER} -p${FPW} django_database nadc_entity | sed 's/ AUTO_INCREMENT=[0-9]*\b//' | gzip > entity.sql.gz
+mysqldump -u ${FUSER} -p${FPW} django_database nadc_expenditure | sed 's/ AUTO_INCREMENT=[0-9]*\b//' | gzip > expenditure.sql.gz
 printf "~~ baked out SQL files for Dataomaha ~~\n\n"
 
 #upload sql dump + last_updated.py to live server

@@ -14,14 +14,6 @@ import requests
 
 fabric.state.output.status = False
 
-
-def weekGetter(donationdate):
-    '''
-    Return the number of the week for kludgy dedupe process targeting donations in same week.
-    '''
-    dateasdate = datetime.datetime.strptime(donationdate, '%Y-%m-%d')
-    return str(dateasdate.isocalendar()[1])
-
 def getConfig():
     """
     Cache list of config values.
@@ -127,7 +119,6 @@ def parseErrything():
         toupload/donation.txt
         toupload/loan.txt
         toupload/expenditure.txt
-        toupload/ballot.txt
         toupload/misc.txt
     
     Forms we care about:
@@ -167,6 +158,7 @@ def parseErrything():
     donations = open(THISPATH + "nadc_data/toupload/donations-raw.txt", "wb")
     loans = open(THISPATH + "nadc_data/toupload/loan.txt", "wb")
     expenditures = open(THISPATH + "nadc_data/toupload/expenditure.txt", "wb")
+    firehose = open(THISPATH + "nadc_data/toupload/firehose.txt", "wb")
     misc = open(THISPATH + "nadc_data/toupload/misc.txt", "wb")
     
     #write headers to files that get deduped by pandas or whatever
@@ -182,7 +174,8 @@ def parseErrything():
         "donation_year",
         "notes",
         "stance",
-        "donor_name"
+        "donor_name",
+        "source_table"
         ]
     donations.write("|".join(donations_headers) + "\n")
     
@@ -634,7 +627,7 @@ def parseErrything():
         b1abreader = csvkit.reader(b1ab, delimiter = delim)
         b1abreader.next()
         
-        for row in b1abreader:
+        for idx, row in enumerate(b1abreader):
             b1ab_committee_id = row[1]
             b1ab_contributor_id = row[4]
             
@@ -746,10 +739,10 @@ def parseErrything():
                         """
                         DB fields
                         =========
-                        db_id, cash, inkind, pledge, inkind_desc, donation_date, donor_id, recipient_id, donation_year, notes, stance, donor_name
+                        db_id, cash, inkind, pledge, inkind_desc, donation_date, donor_id, recipient_id, donation_year, notes, stance, donor_name, source_table
                         """
                         b1ab_donation_list = [                        
-                            "",
+                            str(idx),
                             b1ab_cash,
                             b1ab_inkind_amount,
                             b1ab_pledge_amount,
@@ -759,9 +752,11 @@ def parseErrything():
                             b1ab_committee_id,
                             b1ab_year,
                             "",
-                            weekGetter(b1ab_date_test),
                             "",
+                            "",
+                            "b1ab",
                         ]
+                        
                         donations.write("|".join(b1ab_donation_list) + "\n")
     
     
@@ -1319,7 +1314,7 @@ def parseErrything():
                             """
                             DB fields
                             =========
-                            db_id, cash, inkind, pledge, inkind_desc, donation_date, donor_id, recipient_id, donation_year, notes, stance, donor_name
+                            db_id, cash, inkind, pledge, inkind_desc, donation_date, donor_id, recipient_id, donation_year, notes, stance, donor_name, source_table
                             """
                             b2b_donation_list = [                        
                                 "",
@@ -1332,10 +1327,11 @@ def parseErrything():
                                 b2b_target_id,
                                 b2b_year,
                                 "",
-                                weekGetter(b2b_exp_date_test),
                                 "",
+                                "",
+                                "b2b",
                             ]
-                            #donations.write("|".join(b2b_donation_list) + "\n")
+                            firehose.write("|".join(b2b_donation_list) + "\n")
                         
                         #else it's a true expenditure
                         else:
@@ -1612,7 +1608,7 @@ def parseErrything():
                         """
                         DB fields
                         =========
-                        db_id, cash, inkind, pledge, inkind_desc, donation_date, donor_id, recipient_id, donation_year, notes, stance, donor_name
+                        db_id, cash, inkind, pledge, inkind_desc, donation_date, donor_id, recipient_id, donation_year, notes, stance, donor_name, source_table
                         """
                         b4a_donation_list = [                        
                             "",
@@ -1625,10 +1621,11 @@ def parseErrything():
                             b4a_committee_id,
                             b4a_year,
                             "",
-                            weekGetter(b4a_date_test),
                             "",
+                            "",
+                            "b4a",
                         ]
-                        #donations.write("|".join(b4a_donation_list) + "\n")
+                        firehose.write("|".join(b4a_donation_list) + "\n")
       
       
     with open('formb4b1.txt', 'rb') as b4b1:
@@ -1808,7 +1805,7 @@ def parseErrything():
                             """
                             DB fields
                             =========
-                            db_id, cash, inkind, pledge, inkind_desc, donation_date, donor_id, recipient_id, donation_year, notes, stance, donor_name
+                            db_id, cash, inkind, pledge, inkind_desc, donation_date, donor_id, recipient_id, donation_year, notes, stance, donor_name, source_table
                             """
                             b4b1_donation_list = [                        
                                 "",
@@ -1821,10 +1818,11 @@ def parseErrything():
                                 b4b1_target_id,
                                 b4b1_year,
                                 "",
-                                weekGetter(b4b1_date_test),
                                 "",
+                                "",
+                                "b4b1",
                             ]
-                            #donations.write("|".join(b4b1_donation_list) + "\n")
+                            firehose.write("|".join(b4b1_donation_list) + "\n")
                         
                         #Or is it a true expenditure?
                         else:
@@ -1960,7 +1958,7 @@ def parseErrything():
                         """
                         DB fields
                         =========
-                        db_id, cash, inkind, pledge, inkind_desc, donation_date, donor_id, recipient_id, donation_year, notes, stance, donor_name
+                        db_id, cash, inkind, pledge, inkind_desc, donation_date, donor_id, recipient_id, donation_year, notes, stance, donor_name, source_table
                         """
                         b4b2_donation_list = [                        
                             "",
@@ -1973,10 +1971,11 @@ def parseErrything():
                             "",
                             b4b2_year,
                             "Unspecified out-of-state or federal contribution",
-                            weekGetter(b4b2_date_test),
+                            "",
                             b4b2_donor_name,
+                            "b4b2",
                         ]
-                        #donations.write("|".join(b4b2_donation_list) + "\n")
+                        firehose.write("|".join(b4b2_donation_list) + "\n")
                 
                 
     with open('formb4b3.txt', 'rb') as b4b3:
@@ -2293,7 +2292,7 @@ def parseErrything():
                             """
                             DB fields
                             =========
-                            db_id, cash, inkind, pledge, inkind_desc, donation_date, donor_id, recipient_id, donation_year, notes, stance, donor_name
+                            db_id, cash, inkind, pledge, inkind_desc, donation_date, donor_id, recipient_id, donation_year, notes, stance, donor_name, source_table
                             """
                             b5_donation_list = [                        
                                 "",
@@ -2306,10 +2305,11 @@ def parseErrything():
                                 b5_committee_id,
                                 b5_year,
                                 "",
-                                weekGetter(b5_date_test),
+                                "",
                                 b5_donor_name,
+                                "b5",
                             ]
-                            #donations.write("|".join(b5_donation_list) + "\n")
+                            firehose.write("|".join(b5_donation_list) + "\n")
     
     
     #now we do the b6 tables with some fly csvjoin ish
@@ -2702,7 +2702,7 @@ def parseErrything():
                         """
                         DB fields
                         ========
-                        db_id, cash, inkind, pledge, inkind_desc, donation_date, donor_id, recipient_id, donation_year, notes, stance, donor_name
+                        db_id, cash, inkind, pledge, inkind_desc, donation_date, donor_id, recipient_id, donation_year, notes, stance, donor_name, source_table
                         """
                         b72_donation_list = [                        
                             "",
@@ -2715,10 +2715,11 @@ def parseErrything():
                             b72_committee_id,
                             b72_year,
                             "",
-                            weekGetter(b72_date_test),
+                            "",
                             " ".join((row[0].strip().upper()).split()).replace('"',""),
+                            "b72",
                         ]
-                        #donations.write("|".join(b72_donation_list) + "\n")
+                        firehose.write("|".join(b72_donation_list) + "\n")
     
     
     with open('formb73.txt', 'rb') as b73:
@@ -2955,158 +2956,6 @@ def parseErrything():
                     b9_entity_date_of_thing_happening,
                 ]
                 entities.write("|".join(b9_committee_list) + "\n")
-
-    
-    #with open('formb11.txt', 'rb') as b11:
-        """
-        FormB11: Report of Late Independent Expenditure
-        
-        *** 1/4/2016: These are problematically duplicated in other tables, so we've decided not to pull them into the main duder. We need to figure out a way to alert reporters/readers of late expenditures, though -- maybe date test and do an email? A separate table? For now, I'll leave the parsing logic intact but comment it out. ***
-        
-        COLUMNS
-        =======
-        0: Committee Name
-        1: Form ID
-        2: Committee ID
-        3: Postmark Date
-        4: Date Received
-        5: Microfilm Number
-        6: Recipient Name
-        7: Recipient Address
-        8: Recipient City
-        9: Recipient State
-        10: Recipient Zip
-        11: Recipient Phone
-        12: Expenditure Date
-        13: Amount
-        14: Candidate ID
-        15: Candidate Support/Oppose
-        16: Ballot Question ID
-        17: Ballot Support/Oppose
-        18: Date Last Revised
-        19: Last Revised By
-        20: Candidate/Ballot Name
-        """
-        
-        """
-        print "    formb11 ..."
-        
-        b11reader = csvkit.reader(b11, delimiter = delim)
-        b11reader.next()
-        
-        for row in b11reader:
-            b11_committee_id = row[2]
-            b11_candidate_id = row[14]
-            b11_ballot_id = row[16]
-            
-            if b11_committee_id not in GARBAGE_COMMITTEES:
-                #Append ID to master list
-                id_master_list.append(b11_committee_id)
-                
-                #Add committee to Entity
-                b11_committee_name = ' '.join((row[0].strip().upper()).split()).replace('"',"") #committee name
-                b11_committee_address = "" #Address
-                b11_committee_city = "" #City
-                b11_committee_state = "" #State
-                b11_committee_zip = "" #ZIP
-                #b11_committee_type = ""
-                b11_committee_type = canonFlag(b11_committee_id) # canonical flag
-                b11_entity_date_of_thing_happening = row[4] #Date used to eval recency on dedupe
-        """
-        """
-                DB fields
-                ========
-                nadcid, name, address, city, state, zip, entity_type, notes, employer, occupation, place_of_business, dissolved_date
-                
-                We're adding b11_entity_date_of_thing_happening so that later we can eval for recency on dedupe.
-                
-        """
-        """
-                b11_committee_list = [
-                    b11_committee_id,
-                    b11_committee_name,
-                    b11_committee_address,
-                    b11_committee_city,
-                    b11_committee_state,
-                    b11_committee_zip,
-                    b11_committee_type,
-                    "",
-                    "",
-                    "",
-                    "",
-                    "",
-                    b11_entity_date_of_thing_happening,
-                ]
-                entities.write("|".join(b11_committee_list) + "\n")
-                
-                # womp expenditures in there
-                b11_exp_date = row[12]
-                b11_exp_date_test = validDate(b11_exp_date)
-                if b11_exp_date_test == "broke":
-                    b11_exp_dict = {}
-                    b11_exp_dict["donor_id"] = row[2]
-                    b11_exp_dict["recipient_id"] = ' '.join((row[6].upper().strip()).split()).replace('"',"")
-                    b11_exp_dict["lookup_name"] = ' '.join((row[0].strip().upper()).split()).replace('"',"")
-                    b11_exp_dict["source_table"] = "b11"
-                    b11_exp_dict["destination_table"] = "expenditures"
-                    b11_exp_dict["donation_date"] = b11_exp_date
-                    rows_with_new_bad_dates.append(b11_exp_dict)
-                else:
-                    b11_exp_year = b11_exp_date_test.split("-")[0]
-                    if int(b11_exp_year) >= 1999:
-                        b11_exp_payee = ' '.join((row[6].upper().strip()).split()).replace('"',"")
-                        b11_exp_committee_name =  ' '.join((row[0].upper().strip()).split()).replace('"',"")
-                        b11_exp_address = " ".join([row[7], row[8], row[9], row[10]])
-                        b11_exp_address = ' '.join((b11_exp_address.upper().strip()).split()).replace('"',"")
-                        b11_exp_purpose = ""
-                        b11_exp_amount = row[13]
-                        b11_exp_inkind = ""
-                        b11_exp_target_name = row[20]
-                        
-                        if row[14] and row[14] != "" and row[15] and row[15] != "":
-                            b11_exp_stance = row[15].upper().strip() # (S=Support, O=Oppose)
-                            if b11_exp_stance == "S":
-                                b11_exp_stance = "0"
-                            elif b11_exp_stance == "O":
-                                b11_exp_stance = "1"
-                            else:
-                                b11_exp_stance = ""
-                            b11_exp_target_id = row[14]
-                        else:
-                            b11_exp_stance = row[17].upper().strip() # (S=Support, O=Oppose)
-                            if b11_exp_stance == "S":
-                                b11_exp_stance = "0"
-                            elif b11_exp_stance == "O":
-                                b11_exp_stance = "1"
-                            else:
-                                b11_exp_stance = ""
-                            b11_exp_target_id = row[16]
-        """                
-        """
-                        DB fields
-                        =========
-                        db_id (""), payee (name, free text), payee_addr, exp_date, exp_purpose, amount, in_kind, committee_id (doing the expending), stance (support/oppose), notes, payee_committee_id (the payee ID, if exists), committee_exp_name (name of the committee doing the expending), raw_target (free text ID of target ID, will get shunted to candidate or committee ID on save), target_candidate_id, target_committee_id
-        """
-        """
-                        b11_exp_list = [  
-                            "",                        
-                            b11_exp_payee,
-                            b11_exp_address,
-                            b11_exp_date_test,
-                            b11_exp_purpose,
-                            b11_exp_amount,
-                            b11_exp_inkind,
-                            b11_committee_id, #ID of committee doing the expending
-                            b11_exp_stance,
-                            "", #notes
-                            "", #payee ID
-                            b11_exp_committee_name, #name of committee doing the expending
-                            b11_exp_target_id, #raw target committee ID
-                            "\N", #target candidate ID
-                            "", #target committee ID                      
-                        ]
-                        expenditures.write("|".join(b11_exp_list) + "\n")
-        """
     
     with open('forma1misc.txt', 'rb') as a1misc:
         """
@@ -3213,6 +3062,7 @@ def parseErrything():
     donations.close()
     loans.close()
     expenditures.close()
+    firehose.close()
     misc.close()
     
     #check for new bad dates
@@ -3421,21 +3271,24 @@ def parseErrything():
         "recipient_id": object,
         "donation_year": object,
         "notes": object,
-        "stance": object, #really sorry everyone
-        "donor_name": object
+        "stance": object,
+        "donor_name": object,
+        "source_table": object
         }
     )
-    deduped_donations = clean_donations.drop_duplicates(subset=["donor_id", "donation_year", "stance", "recipient_id", "cash", "inkind", "pledge"])
+    deduped_donations = clean_donations.drop_duplicates(subset=["donor_id", "donation_year", "donation_date", "recipient_id", "cash", "inkind", "pledge"])
     deduped_donations.to_csv(THISPATH + 'nadc_data/toupload/donations_almost_there.txt', sep="|")
     with hide('running', 'stdout', 'stderr'):
-        local('csvcut -x -d "|" -c db_id,cash,inkind,pledge,inkind_desc,donation_date,donor_id,recipient_id,donation_year,notes,stance,donor_name ' + THISPATH + 'nadc_data/toupload/donations_almost_there.txt | csvformat -D "|" | sed -e \'1d\' -e \'s/\"//g\' > ' + THISPATH + 'nadc_data/toupload/donations.txt', capture=False)
+        local('csvcut -x -d "|" -c db_id,cash,inkind,pledge,inkind_desc,donation_date,donor_id,recipient_id,donation_year,notes,stance,donor_name,source_table ' + THISPATH + 'nadc_data/toupload/donations_almost_there.txt | csvformat -D "|" | sed -e \'1d\' -e \'s/\"//g\' > ' + THISPATH + 'nadc_data/toupload/donations.txt', capture=False)
     
     print "\n\nDONE."
 
     
 @hosts('dataomaha.com')    
 def goLive():
-    """Upload last_updated.py to live server, load SQL dumps into DO database"""
+    """
+    Upload last_updated.py to live server, load SQL dumps into DO database
+    """
     
     env.user = configlist[2]
     env.password = configlist[3]

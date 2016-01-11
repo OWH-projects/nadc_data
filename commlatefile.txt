@@ -3382,16 +3382,16 @@ ID|Committee Name|Statement Due|Due Date|Date Filed|Amount|Status|Reduced|Order 
 3625|Friends of John Sieler|14 Post General Campaign Statement|2015-01-13|2015-10-30|750.00|PENDING||||Sieler|John|
 3608|Ron Hug for Metro Board|14 1st General Campaign Statement|2014-10-06|2014-10-07|25.00|PENDING||||Hug|Ron|
 3610|Lancaster County Democrats|15 Post General Campaign Statement|2015-06-15|2015-06-18|75.00|PAID|||2015-08-25|||
-3613|Jeffrey D. Miller for OPS|14 Annual Campaign Statement|2015-02-02|2015-07-06|750.00|PENDING||||Miller|Jeffrey|
+3613|Jeffrey D. Miller for OPS|14 Annual Campaign Statement|2015-02-02|2015-07-06|750.00|REDUCED|0.00|2015-11-30||Miller|Jeffrey|
 3614|NE Republican Party|Report of Late Contribution|2015-04-29|2015-06-15|1250.00|PENDING|25.00|||||
 3616|Citizens for Restoring Resonsible Government|14 Annual Campaign Statement|2015-02-02|2015-07-29|750.00|REDUCED|0.00|2015-09-25||||
 3619|Michels for Legislature|Statement of Organization|2015-10-13|2015-10-15|50.00|PENDING||||Michels|Dale|
-3621|Citizens Supporting Excellence in Education|15 2nd Special Election Campaign Statement|2015-09-08|2015-10-22|750.00|PENDING||||||
+3621|Citizens Supporting Excellence in Education|15 2nd Special Election Campaign Statement|2015-09-08|2015-10-22|750.00|REDUCED|0.00|2015-12-10||||
 3607|Ron Hug for Metro Board|14 Post General Campaign Statement|2015-01-13|2015-05-05|750.00|PENDING||||Hug|Ron|
 3611|Friends for Adam Morfeld|14 Post General Campaign Statement|2015-01-13|2015-01-26|325.00|REDUCED|0.00|2015-06-23||Morfeld|Adam|
 3480|Team Chadron|2014 2nd General Campaign Statement|2014-10-27|2014-11-21|625|PAID|||2015-09-08|||
 3612|Darl Naumann for Lancaster County Board|14 Annual Campaign Statement|2015-02-02|2015-05-21|750.00|REDUCED|0.00|2015-06-30||Naumann|Darl|
 3620|The Plain Talk|15 1st Special Election Campaign Statement|2015-10-13|2015-10-16|75.00|REDUCED|0.00|2015-10-19||||
-3622|Citizens Supporting Excellence in Education|Report of Late Contribution|2015-09-09|2015-10-22|1100.00|PENDING||||||
-3623|Citizens Supporting Excellence in Education|Report of Late Contribution|2015-09-09|2015-10-22|1129.15|PENDING||||||
+3622|Citizens Supporting Excellence in Education|Report of Late Contribution|2015-09-09|2015-10-22|1100.00|REDUCED|0.00|2015-12-10||||
+3623|Citizens Supporting Excellence in Education|Report of Late Contribution|2015-09-09|2015-10-22|1129.15|REDUCED|0.00|2015-12-10||||
 3624|Keep the Money in Nebraska|Oct. Monthly Campaign Statement|2015-11-02|2015-11-04|50.00|PENDING||||||

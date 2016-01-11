@@ -152,6 +152,7 @@ def parseErrything():
     delim = "|"
     id_master_list = []
     rows_with_new_bad_dates = []
+    counter = 0
     
     entities = open(THISPATH + "nadc_data/toupload/entity-raw.txt", "wb")
     candidates = open(THISPATH + "nadc_data/toupload/candidate.txt", "wb")
@@ -627,7 +628,7 @@ def parseErrything():
         b1abreader = csvkit.reader(b1ab, delimiter = delim)
         b1abreader.next()
         
-        for idx, row in enumerate(b1abreader):
+        for row in b1abreader:
             b1ab_committee_id = row[1]
             b1ab_contributor_id = row[4]
             
@@ -742,7 +743,7 @@ def parseErrything():
                         db_id, cash, inkind, pledge, inkind_desc, donation_date, donor_id, recipient_id, donation_year, notes, stance, donor_name, source_table
                         """
                         b1ab_donation_list = [                        
-                            str(idx),
+                            str(counter),
                             b1ab_cash,
                             b1ab_inkind_amount,
                             b1ab_pledge_amount,
@@ -758,6 +759,7 @@ def parseErrything():
                         ]
                         
                         donations.write("|".join(b1ab_donation_list) + "\n")
+                        counter += 1
     
     
     with open('formb1c.txt', 'rb') as b1c:
@@ -1168,6 +1170,50 @@ def parseErrything():
                 ]
                 entities.write("|".join(b2a_contributor_list) + "\n")
     
+            #Womp into donations
+            if b2a_contributor_id not in GARBAGE_COMMITTEES and b2a_committee_id not in GARBAGE_COMMITTEES:
+                #datetest
+                b2a_donation_date = row[3]
+                b2a_date_test = validDate(b2a_donation_date)
+                if b2a_date_test == "broke":
+                    b2a_dict = {}
+                    b2a_dict["donor_id"] = row[2]
+                    b2a_dict["recipient_id"] = row[0]
+                    b2a_dict["lookup_name"] = ' '.join((row[7].strip().upper()).split()).replace('"',"")
+                    b2a_dict["source_table"] = "b2a"
+                    b2a_dict["destination_table"] = "donation"
+                    b2a_dict["donation_date"] = b2a_donation_date
+                    rows_with_new_bad_dates.append(b2a_dict)
+                else:
+                    b2a_year = b2a_date_test.split("-")[0]
+                    if int(b2a_year) >= 1999:
+                        b2a_cash = getFloat(str(row[4])) #cash
+                        b2a_inkind_amount = getFloat(str(row[5])) #inkind
+                        b2a_pledge_amount = getFloat(str(row[6])) #pledge
+                        b2a_inkind_desc = "" #in-kind description
+                        
+                        """
+                        DB fields
+                        =========
+                        db_id, cash, inkind, pledge, inkind_desc, donation_date, donor_id, recipient_id, donation_year, notes, stance, donor_name, source_table
+                        """
+                        b2a_donation_list = [                        
+                            str(counter),
+                            b2a_cash,
+                            b2a_inkind_amount,
+                            b2a_pledge_amount,
+                            b2a_inkind_desc,
+                            b2a_date_test,
+                            b2a_contributor_id,
+                            b2a_committee_id,
+                            b2a_year,
+                            "",
+                            "",
+                            "",
+                            "b2a",
+                        ]
+                        donations.write("|".join(b2a_donation_list) + "\n")
+                        counter += 1
     
     with open('formb2b.txt', 'rb') as b2b:
         """
@@ -1611,7 +1657,7 @@ def parseErrything():
                         db_id, cash, inkind, pledge, inkind_desc, donation_date, donor_id, recipient_id, donation_year, notes, stance, donor_name, source_table
                         """
                         b4a_donation_list = [                        
-                            "",
+                            str(counter),
                             b4a_cash,
                             b4a_inkind_amount,
                             b4a_pledge_amount,
@@ -1625,7 +1671,8 @@ def parseErrything():
                             "",
                             "b4a",
                         ]
-                        firehose.write("|".join(b4a_donation_list) + "\n")
+                        donations.write("|".join(b4a_donation_list) + "\n")
+                        counter += 1
       
       
     with open('formb4b1.txt', 'rb') as b4b1:

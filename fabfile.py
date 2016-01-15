@@ -154,11 +154,11 @@ def parseErrything():
     rows_with_new_bad_dates = []
     counter = 0
     
-    entities = open(THISPATH + "nadc_data/toupload/entity-raw.txt", "wb")
+    entities = open(THISPATH + "nadc_data/toupload/entity_raw.txt", "wb")
     candidates = open(THISPATH + "nadc_data/toupload/candidate.txt", "wb")
-    donations = open(THISPATH + "nadc_data/toupload/donations-raw.txt", "wb")
+    donations = open(THISPATH + "nadc_data/toupload/donations_raw.txt", "wb")
     loans = open(THISPATH + "nadc_data/toupload/loan.txt", "wb")
-    expenditures = open(THISPATH + "nadc_data/toupload/expenditure.txt", "wb")
+    expenditures = open(THISPATH + "nadc_data/toupload/expenditure_raw.txt", "wb")
     firehose = open(THISPATH + "nadc_data/toupload/firehose.txt", "wb")
     misc = open(THISPATH + "nadc_data/toupload/misc.txt", "wb")
     
@@ -759,6 +759,7 @@ def parseErrything():
                         ]
                         
                         donations.write("|".join(b1ab_donation_list) + "\n")
+                        firehose.write("|".join(b1ab_donation_list) + "\n")
                         counter += 1
     
     
@@ -960,8 +961,8 @@ def parseErrything():
                         b1d_payee = ' '.join((row[3].upper().strip()).split()).replace('"',"")
                         b1d_address = ' '.join((row[4].upper().strip()).split()).replace('"',"")
                         b1d_exp_purpose = ' '.join((row[5].strip()).split()).replace('"',"")
-                        b1d_amount = row[7]
-                        b1d_inkind = row[8]
+                        b1d_amount = getFloat(row[7])
+                        b1d_inkind = getFloat(row[8])
                         
                         """
                         DB fields
@@ -1213,6 +1214,7 @@ def parseErrything():
                             "b2a",
                         ]
                         donations.write("|".join(b2a_donation_list) + "\n")
+                        firehose.write("|".join(b2a_donation_list) + "\n")
                         counter += 1
     
     with open('formb2b.txt', 'rb') as b2b:
@@ -1382,11 +1384,11 @@ def parseErrything():
                         #else it's a true expenditure
                         else:
                             if row[4].upper().strip() == "K":
-                                b2b_amount = ""
+                                b2b_amount = "0.0"
                                 b2b_inkind = getFloat(str(row[6]))
                             else:
                                 b2b_amount = getFloat(str(row[6]))
-                                b2b_inkind = ""
+                                b2b_inkind = "0.0"
                         
                         """
                         DB fields
@@ -1672,6 +1674,7 @@ def parseErrything():
                             "b4a",
                         ]
                         donations.write("|".join(b4a_donation_list) + "\n")
+                        firehose.write("|".join(b4a_donation_list) + "\n")
                         counter += 1
       
       
@@ -1881,11 +1884,11 @@ def parseErrything():
                             
                             #was it an in-kind expenditure?
                             if b4b1_transaction_type.strip().upper() == "I":
-                                b4b1_exp_inkind = row[7]
+                                b4b1_exp_inkind = getFloat(row[7])
                                 b4b1_exp_amount = "0.0"
                             else:
                                 b4b1_exp_inkind = "0.0"
-                                b4b1_exp_amount = row[7]
+                                b4b1_exp_amount = getFloat(row[7])
                             
                             """
                             DB fields
@@ -2115,8 +2118,8 @@ def parseErrything():
                         b4b3_payee = ' '.join((row[3].strip().upper()).split()).replace('"',"")
                         b4b3_address = ' '.join((row[4].strip().upper()).split()).replace('"',"")
                         b4b3_purpose = ' '.join((row[5].strip().upper()).split()).replace('"',"")
-                        b4b3_amount = row[7]
-                        b4b3_inkind = ""
+                        b4b3_amount = getFloat(row[7])
+                        b4b3_inkind = "0.0"
                         
                         """
                         DB fields
@@ -2472,8 +2475,8 @@ def parseErrything():
                         b6_payee = ' '.join((row[27].strip().upper()).split()).replace('"',"")
                         b6_payee_addr = ' '.join((row[28].strip().upper()).split()).replace('"',"")
                         b6_purpose = ' '.join((row[26].strip().upper()).split()).replace('"',"")
-                        b6_amount = row[25]
-                        b6_inkind = ""
+                        b6_amount = getFloat(row[25])
+                        b6_inkind = "0.0"
                         b6_target_id = row[2]
                         b6_stance = ""
                         b6_exp_name = ' '.join((row[6].strip().upper()).split()).replace('"',"")
@@ -2907,11 +2910,11 @@ def parseErrything():
                         b73_contrib_name = ' '.join((row[0].strip().upper()).split()).replace('"',"")
 
                         if b73_contrib_type == "E":
-                            b73_amount = row[5]
-                            b73_inkind = ""
+                            b73_amount = getFloat(row[5])
+                            b73_inkind = "0.0"
                         else:
-                            b73_amount = ""
-                            b73_inkind = row[5]
+                            b73_amount = "0.0"
+                            b73_inkind = getFloat(row[5])
                         
                         """
                         DB fields
@@ -3124,10 +3127,41 @@ def parseErrything():
         #local("killall parser.sh", capture=False)
 
     
+    #Handle the handful of expenditures that collapse in-kind and cash into the same record
+    with open(THISPATH + "nadc_data/toupload/expenditure_raw.txt", "rb") as exp_in, open(THISPATH + "nadc_data/toupload/expenditure.txt", "wb") as exp_out:
+        reader = csvkit.reader(exp_in, delimiter=delim)
+        for row in reader:
+            db_id = row[0]
+            payee = row[1]
+            payee_addr = row[2]
+            exp_date = row[3]
+            exp_purpose = row[4]
+            amount = row[5]
+            inkind = row[6]
+            committee_id = row[7]
+            stance = row[8]
+            notes = row[9]
+            payee_committee_id = row[10]
+            committee_exp_name = row[11]
+            raw_target = row[12]
+            target_candidate_id = row[13]
+            target_committee_id = row[14]
+            
+            if int(float(amount)) > 0 and int(float(inkind)) > 0:
+                ls1 = [db_id, payee, payee_addr, exp_date, exp_purpose, amount, "0.0", committee_id, stance, notes, payee_committee_id, committee_exp_name, raw_target, target_candidate_id, target_committee_id]
+
+                ls2 = [db_id, payee, payee_addr, exp_date, exp_purpose, "0.0", inkind, committee_id, stance, notes, payee_committee_id, committee_exp_name, raw_target, target_candidate_id, target_committee_id]
+                
+                exp_out.write("|".join(ls1) + "\n")
+                exp_out.write("|".join(ls2) + "\n")
+            else:
+                exp_out.write("|".join(row) + "\n")
+
+    
     """
     Dedupe entity file
     =========
-    - csvsort entity-raw.txt by date_we_care_about
+    - csvsort entity_raw.txt by date_we_care_about
     - loop over unique entity IDs (having taken the set of id_master_list)
     - grep for each ID in the sorted entity file (~1 million times faster than python)
     - loop over the results, compiling a dict with the most recent, non-empty values, if available
@@ -3145,7 +3179,7 @@ def parseErrything():
     print "   pre-duping ..."
     
     #dedupe sorted file
-    clean_entity = pd.read_csv(THISPATH + "nadc_data/toupload/entity-raw.txt", delimiter="|", dtype={
+    clean_entity = pd.read_csv(THISPATH + "nadc_data/toupload/entity_raw.txt", delimiter="|", dtype={
         "nadcid": object,
         "name": object,
         "address": object,
@@ -3175,7 +3209,7 @@ def parseErrything():
     #get most current, complete data
     print "   grepping pre-duped, sorted file and deduping for recency and completeness ..."
     
-    with open(THISPATH + "nadc_data/toupload/entity-almost-final-for-real.txt", "wb") as entity_almost_final:
+    with open(THISPATH + "nadc_data/toupload/entity_almost_final_for_real.txt", "wb") as entity_almost_final:
         for idx, i in enumerate(uniques):
             #print str(idx)
             with hide('running', 'stdout', 'stderr'):
@@ -3270,7 +3304,7 @@ def parseErrything():
     #handling stray bastards with no names
     print "   handling entities with no name ..."
     
-    with open(THISPATH + "nadc_data/toupload/entity-almost-final-for-real.txt", "rb") as readin, open(THISPATH + "nadc_data/toupload/entity.txt", "wb") as readout:
+    with open(THISPATH + "nadc_data/toupload/entity_almost_final_for_real.txt", "rb") as readin, open(THISPATH + "nadc_data/toupload/entity.txt", "wb") as readout:
         reader = csvkit.reader(readin, delimiter=delim)
         for row in reader:
             nadc_id = row[0]
@@ -3307,7 +3341,7 @@ def parseErrything():
     print "\n\nPREPPING DONATIONS FILE"
     print "    deduping ..."
     
-    clean_donations = pd.read_csv(THISPATH + "nadc_data/toupload/donations-raw.txt", delimiter="|", dtype={
+    clean_donations = pd.read_csv(THISPATH + "nadc_data/toupload/donations_raw.txt", delimiter="|", dtype={
         "db_id": object,
         "cash": object,
         "inkind": object,
@@ -3325,8 +3359,33 @@ def parseErrything():
     )
     deduped_donations = clean_donations.drop_duplicates(subset=["donor_id", "donation_year", "donation_date", "recipient_id", "cash", "inkind", "pledge"])
     deduped_donations.to_csv(THISPATH + 'nadc_data/toupload/donations_almost_there.txt', sep="|")
+    
     with hide('running', 'stdout', 'stderr'):
-        local('csvcut -x -d "|" -c db_id,cash,inkind,pledge,inkind_desc,donation_date,donor_id,recipient_id,donation_year,notes,stance,donor_name,source_table ' + THISPATH + 'nadc_data/toupload/donations_almost_there.txt | csvformat -D "|" | sed -e \'1d\' -e \'s/\"//g\' > ' + THISPATH + 'nadc_data/toupload/donations.txt', capture=False)
+        local('csvcut -x -d "|" -c db_id,cash,inkind,pledge,inkind_desc,donation_date,donor_id,recipient_id,donation_year,notes,stance,donor_name,source_table ' + THISPATH + 'nadc_data/toupload/donations_almost_there.txt | csvformat -D "|" | sed -e \'1d\' -e \'s/\"//g\' > ' + THISPATH + 'nadc_data/toupload/donations_almost_there_for_real.txt', capture=False)
+    
+    with open(THISPATH + 'nadc_data/toupload/donations_almost_there_for_real.txt', 'rb') as don_in, open(THISPATH + 'nadc_data/toupload/donations.txt', 'wb') as don_out:
+        reader = csvkit.reader(don_in, delimiter=delim)
+        for don_record in reader:
+            db_id = don_record[0]
+            cash = don_record[1]
+            inkind = don_record[2]
+            pledge = don_record[3]
+            inkind_desc = don_record[4]
+            donation_date = don_record[5]
+            donor_id = don_record[6]
+            recipient_id = don_record[7]
+            donation_year = don_record[8]
+            notes = don_record[9]
+            week = don_record[10]
+            donor_name = don_record[11]
+            source_table = don_record[12]
+            if int(float(cash)) > 0 and int(float(inkind)) > 0:
+                ls1 = [db_id, cash, "0.0", pledge, inkind_desc, donation_date, donor_id, recipient_id, donation_year, notes, week, donor_name, source_table]
+                ls2 = [db_id, "0.0", inkind, pledge, inkind_desc, donation_date, donor_id, recipient_id, donation_year, notes, week, donor_name, source_table]
+                don_out.write("|".join(ls1) + "\n")
+                don_out.write("|".join(ls2) + "\n")
+            else:
+                don_out.write("|".join(don_record) + "\n")
     
     print "\n\nDONE."
 
